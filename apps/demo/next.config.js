@@ -4,6 +4,7 @@ const path = require("path");
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../../"),
   transpilePackages: ["@jude/store"],
+  devIndicators: false,
   async headers() {
     return [
       {

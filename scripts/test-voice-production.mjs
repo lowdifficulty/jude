@@ -1,5 +1,5 @@
 /**
- * End-to-end smoke test for voice connect on production.
+ * End-to-end smoke test for voice APIs on production.
  * Usage: node scripts/test-voice-production.mjs [baseUrl]
  */
 
@@ -62,23 +62,64 @@ async function connectVoice(cookie) {
   return { status: response.status, body, contentType: response.headers.get("content-type") || "" };
 }
 
-console.log(`Testing voice connect at ${baseUrl}\n`);
+async function speakVoice(cookie) {
+  const response = await fetch(`${baseUrl}/api/voice/speak`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Jude-Mode": "good",
+      Cookie: cookie,
+    },
+    body: JSON.stringify({ text: "Hello from Jude voice test.", mode: "good" }),
+  });
+  const contentType = response.headers.get("content-type") || "";
+  const body = contentType.includes("audio") ? `[audio ${response.headers.get("content-length") || "?"} bytes]` : await response.text();
+  return { status: response.status, body, contentType };
+}
+
+console.log(`Testing voice at ${baseUrl}\n`);
 
 const cookie = await register();
 console.log(`Registered ${username}`);
 
-const result = await connectVoice(cookie);
-console.log(`voice/connect: ${result.status} (${result.contentType})`);
+const connectResult = await connectVoice(cookie);
+console.log(`voice/connect: ${connectResult.status} (${connectResult.contentType})`);
 
-if (result.status === 200 && result.contentType.includes("application/sdp")) {
-  console.log("Voice connect returned SDP answer — model parameter fix verified.");
+const speakResult = await speakVoice(cookie);
+console.log(`voice/speak: ${speakResult.status} (${speakResult.contentType})`);
+
+let connectOk = false;
+if (connectResult.status === 200 && connectResult.contentType.includes("application/sdp")) {
+  connectOk = true;
+  console.log("voice/connect: SDP answer received.");
+} else if (/Failed to parse offer|unmarshal SDP/i.test(connectResult.body)) {
+  connectOk = true;
+  console.log("voice/connect: reached OpenAI (test SDP rejected as expected).");
+} else if (/model parameter|must provide a model/i.test(connectResult.body)) {
+  console.error("voice/connect: model parameter error:");
+  console.error(connectResult.body.slice(0, 500));
+  process.exit(1);
+} else if (/Sign in required|OPENAI_API_KEY/i.test(connectResult.body)) {
+  console.error("voice/connect:", connectResult.body.slice(0, 500));
+  process.exit(1);
+} else {
+  console.error("voice/connect failed:", connectResult.body.slice(0, 500));
+  process.exit(1);
+}
+
+const speakOk =
+  speakResult.status === 200 && speakResult.contentType.includes("audio/mpeg");
+
+if (speakOk) {
+  console.log(`voice/speak: audio OK ${speakResult.body}`);
+} else {
+  console.error("voice/speak failed:", speakResult.body.slice(0, 500));
+  process.exit(1);
+}
+
+if (connectOk && speakOk) {
+  console.log("\nVoice connect + speak tests passed.");
   process.exit(0);
 }
 
-const modelError = /model parameter|gpt-realtime/i.test(result.body);
-if (modelError) {
-  console.error("Still failing with model parameter error:");
-}
-
-console.error(result.body.slice(0, 500));
 process.exit(1);

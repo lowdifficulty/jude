@@ -118,13 +118,16 @@ export async function updateConnectedApps(user: StoredUser, connectedAppIds: str
 
 export async function updateAppSettings(
   user: StoredUser,
-  input: { weatherZip?: string; mode?: JudeMode; dockOrder?: string[] }
+  input: { weatherZip?: string; mode?: JudeMode; personalityId?: string; dockOrder?: string[] }
 ) {
   const profile = await getOrCreateProfile(user);
   profile.appSettings = {
     ...profile.appSettings,
     ...input,
   };
+  if (input.mode !== undefined) {
+    delete profile.appSettings.personalityId;
+  }
   profile.updatedAt = new Date().toISOString();
   await saveUserProfile(profile);
   return profile;

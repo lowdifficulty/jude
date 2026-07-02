@@ -1,4 +1,5 @@
 import { hashPassword, verifyPassword } from "./crypto";
+import { migrateLegacyUsersIfNeeded } from "./legacy-users";
 import { assertPersistentStorage, readStoreJson, writeStoreJson } from "./storage";
 import type { StoredUser } from "./types";
 
@@ -11,6 +12,7 @@ function usernamePath(username: string) {
 }
 
 export async function findUserByUsername(username: string) {
+  await migrateLegacyUsersIfNeeded();
   const normalized = username.trim().toLowerCase();
   const ref = await readStoreJson<{ userId?: string } | null>(usernamePath(normalized), null);
   if (!ref?.userId) return null;
@@ -18,6 +20,7 @@ export async function findUserByUsername(username: string) {
 }
 
 export async function findUserById(id: string) {
+  await migrateLegacyUsersIfNeeded();
   return readStoreJson<StoredUser | null>(userPath(id), null);
 }
 
@@ -26,6 +29,7 @@ export async function createUser(input: {
   password: string;
   displayName?: string;
 }) {
+  await migrateLegacyUsersIfNeeded();
   assertPersistentStorage();
 
   const username = input.username.trim().toLowerCase();

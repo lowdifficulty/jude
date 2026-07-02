@@ -27,34 +27,72 @@ function waitForIceGathering(pc: RTCPeerConnection) {
   });
 }
 
-function waitForPeerConnection(pc: RTCPeerConnection, timeoutMs = 8000) {
-  if (pc.connectionState === "connected") return Promise.resolve();
+function waitForVoiceLink(
+  pc: RTCPeerConnection,
+  dc: RTCDataChannel,
+  timeoutMs = 20000
+) {
+  if (dc.readyState === "open") return Promise.resolve();
+
   return new Promise<void>((resolve, reject) => {
+    let settled = false;
+
+    const finish = (ok: boolean, message?: string) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (ok) resolve();
+      else reject(new Error(message || "Voice connection failed."));
+    };
+
     const timer = window.setTimeout(() => {
-      pc.removeEventListener("connectionstatechange", onChange);
-      if (pc.connectionState === "connected") resolve();
-      else reject(new Error("Voice connection timed out."));
+      if (dc.readyState === "open") finish(true);
+      else if (
+        pc.iceConnectionState === "connected" ||
+        pc.iceConnectionState === "completed"
+      ) {
+        finish(true);
+      } else {
+        finish(false, `Voice connection timed out (${pc.iceConnectionState}).`);
+      }
     }, timeoutMs);
 
-    const onChange = () => {
-      if (pc.connectionState === "connected") {
-        window.clearTimeout(timer);
-        pc.removeEventListener("connectionstatechange", onChange);
-        resolve();
-      }
-      if (pc.connectionState === "failed" || pc.connectionState === "closed") {
-        window.clearTimeout(timer);
-        pc.removeEventListener("connectionstatechange", onChange);
-        reject(new Error("Voice connection failed."));
+    const onDcOpen = () => finish(true);
+
+    const onIceChange = () => {
+      if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+        finish(true);
+      } else if (pc.iceConnectionState === "failed") {
+        finish(false, "Voice connection failed. Check your network and try again.");
       }
     };
 
-    pc.addEventListener("connectionstatechange", onChange);
+    const onConnectionChange = () => {
+      if (pc.connectionState === "connected") finish(true);
+      if (pc.connectionState === "failed") {
+        finish(false, "Voice connection failed. Check your network and try again.");
+      }
+    };
+
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      dc.removeEventListener("open", onDcOpen);
+      pc.removeEventListener("iceconnectionstatechange", onIceChange);
+      pc.removeEventListener("connectionstatechange", onConnectionChange);
+    };
+
+    dc.addEventListener("open", onDcOpen);
+    pc.addEventListener("iceconnectionstatechange", onIceChange);
+    pc.addEventListener("connectionstatechange", onConnectionChange);
   });
 }
 
 function extractAssistantText(message: Record<string, unknown>) {
   if (typeof message.text === "string" && message.text.trim()) {
+    return message.text.trim();
+  }
+
+  if (message.type === "response.output_text.done" && typeof message.text === "string") {
     return message.text.trim();
   }
 
@@ -87,6 +125,22 @@ function extractAssistantText(message: Record<string, unknown>) {
   return "";
 }
 
+function responseHasFunctionCall(message: Record<string, unknown>) {
+  const response = message.response as { output?: Array<{ type?: string }> } | undefined;
+  return (response?.output || []).some((item) => item.type === "function_call");
+}
+
+function appendTextDelta(
+  message: Record<string, unknown>,
+  bufferRef: { current: string }
+) {
+  const delta =
+    (typeof message.delta === "string" && message.delta) ||
+    (typeof message.text === "string" && message.text) ||
+    "";
+  if (delta) bufferRef.current += delta;
+}
+
 function configurePlaybackAudio(audio: HTMLAudioElement) {
   audio.setAttribute("playsinline", "true");
   audio.setAttribute("webkit-playsinline", "true");
@@ -101,12 +155,97 @@ function unlockAudioPlayback() {
   audio.play().catch(() => {});
 }
 
+function isRecoverableMicError(error: unknown) {
+  if (!(error instanceof DOMException)) return false;
+  return (
+    error.name === "NotFoundError" ||
+    error.name === "DevicesNotFoundError" ||
+    error.name === "OverconstrainedError"
+  );
+}
+
+function describeVoiceStartError(error: unknown) {
+  if (error instanceof DOMException) {
+    switch (error.name) {
+      case "NotFoundError":
+      case "DevicesNotFoundError":
+        return "No microphone was found. Plug one in, or enable it in Windows Settings → Privacy & security → Microphone, then allow your browser to use it.";
+      case "NotAllowedError":
+      case "PermissionDeniedError":
+        return "Microphone access was blocked. Use the lock icon in your browser’s address bar to allow the microphone, then try again.";
+      case "NotReadableError":
+      case "TrackStartError":
+        return "Your microphone is busy or unavailable. Close other apps using it, then try again.";
+      case "SecurityError":
+        return "Microphone access requires a secure page. Use https:// or http://localhost.";
+      case "OverconstrainedError":
+        return "Your microphone could not be opened with the requested settings. Try another input device in system sound settings.";
+      default:
+        break;
+    }
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.trim();
+    if (/requested device not found/i.test(message)) {
+      return "No microphone was found. Plug one in, or enable it in Windows Settings → Privacy & security → Microphone, then allow your browser to use it.";
+    }
+    if (message) return message;
+  }
+
+  return "Could not start voice.";
+}
+
+async function requestMicrophoneStream() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error("Microphone is not available in this browser.");
+  }
+
+  const attempts: MediaStreamConstraints[] = [
+    {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    },
+    { audio: true },
+  ];
+
+  let lastError: unknown;
+  for (const constraints of attempts) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (error) {
+      lastError = error;
+      if (!isRecoverableMicError(error)) break;
+    }
+  }
+
+  throw lastError;
+}
+
+async function assertVoiceReady() {
+  const response = await fetch("/api/voice/ready", {
+    method: "GET",
+    credentials: "include",
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(
+      typeof data.error === "string" ? data.error : "Voice is not configured on the server."
+    );
+  }
+}
+
 export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = false) {
   const [state, setState] = useState<JudeVoiceState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [caption, setCaption] = useState("");
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackDoneRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(false);
@@ -128,6 +267,12 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
 
     micStreamRef.current?.getTracks().forEach((track) => track.stop());
     micStreamRef.current = null;
+
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.pause();
+      remoteAudioRef.current.srcObject = null;
+      remoteAudioRef.current = null;
+    }
 
     if (audioRef.current) {
       audioRef.current.pause();
@@ -168,6 +313,12 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
       playbackDoneRef.current();
       playbackDoneRef.current = null;
     }
+  }, []);
+
+  const cancelAssistantResponse = useCallback(() => {
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open" || !activeRef.current) return;
+    dc.send(JSON.stringify({ type: "response.cancel" }));
   }, []);
 
   const playElevenLabs = useCallback(
@@ -229,17 +380,20 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
   );
 
   const speakAssistantText = useCallback(
-    async (text: string) => {
+    (text: string) => {
       if (!text.trim() || !activeRef.current) return;
-      try {
-        await playElevenLabs(text);
-        if (activeRef.current) updateState("listening");
-      } catch (error) {
-        if (!activeRef.current) return;
-        setErrorMessage(error instanceof Error ? error.message : "Playback failed.");
-        updateState("error");
-        teardown();
-      }
+      setCaption(text.trim());
+      void (async () => {
+        try {
+          await playElevenLabs(text);
+          if (activeRef.current) updateState("listening");
+        } catch (error) {
+          if (!activeRef.current) return;
+          setErrorMessage(error instanceof Error ? error.message : "Playback failed.");
+          updateState("error");
+          teardown();
+        }
+      })();
     },
     [playElevenLabs, teardown, updateState]
   );
@@ -305,17 +459,9 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
     updateState("connecting");
 
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Microphone is not available in this browser.");
-      }
+      await assertVoiceReady();
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      const stream = await requestMicrophoneStream();
 
       if (!activeRef.current) {
         stream.getTracks().forEach((track) => track.stop());
@@ -324,13 +470,20 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
 
       micStreamRef.current = stream;
 
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-        ],
-      });
+      const pc = new RTCPeerConnection();
       pcRef.current = pc;
+
+      const remoteAudio = document.createElement("audio");
+      configurePlaybackAudio(remoteAudio);
+      remoteAudio.autoplay = true;
+      remoteAudio.volume = 0;
+      remoteAudioRef.current = remoteAudio;
+
+      pc.ontrack = (event) => {
+        const stream = event.streams[0] ?? new MediaStream([event.track]);
+        remoteAudio.srcObject = stream;
+        remoteAudio.play().catch(() => {});
+      };
 
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
@@ -345,7 +498,7 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
         if (activeRef.current) stop();
       };
 
-      dc.onmessage = async (event) => {
+      dc.onmessage = (event) => {
         if (!activeRef.current) return;
 
         const message = JSON.parse(event.data) as Record<string, unknown>;
@@ -356,32 +509,55 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
         }
 
         if (type === "input_audio_buffer.speech_started") {
+          interruptPlayback();
+          cancelAssistantResponse();
           updateState("listening");
           return;
         }
 
-        if (type === "response.output_text.delta") {
-          textBufferRef.current += String(message.delta || "");
+        if (type === "input_audio_buffer.speech_stopped" || type === "response.created") {
+          updateState("thinking");
+          return;
+        }
+
+        if (
+          type === "response.output_text.delta" ||
+          type === "response.text.delta" ||
+          type === "response.output_audio_transcript.delta"
+        ) {
+          appendTextDelta(message, textBufferRef);
           return;
         }
 
         if (
           type === "response.text.done" ||
           type === "response.output_text.done" ||
-          type === "response.done"
+          type === "response.output_audio_transcript.done"
         ) {
+          appendTextDelta(message, textBufferRef);
+          return;
+        }
+
+        if (type === "response.done") {
+          if (responseHasFunctionCall(message)) {
+            textBufferRef.current = "";
+            return;
+          }
+
           const text = extractAssistantText(message) || textBufferRef.current.trim();
           textBufferRef.current = "";
           if (text) {
             updateState("thinking");
-            await speakAssistantText(text);
+            speakAssistantText(text);
+          } else if (activeRef.current) {
+            updateState("listening");
           }
           return;
         }
 
         if (type === "response.function_call_arguments.done") {
           updateState("thinking");
-          await handleFunctionCall(
+          void handleFunctionCall(
             String(message.name || ""),
             String(message.arguments || ""),
             String(message.call_id || "")
@@ -419,17 +595,21 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
       }
 
       const answerSdp = await sdpResponse.text();
+      if (!answerSdp.trim().startsWith("v=")) {
+        throw new Error("OpenAI returned an invalid voice session answer.");
+      }
+
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-      await waitForPeerConnection(pc);
+      await waitForVoiceLink(pc, dc);
 
       if (!activeRef.current) return;
 
       updateState("listening");
       greetedRef.current = true;
-      await speakAssistantText(getConnectGreetingText(modeRef.current));
+      speakAssistantText(getConnectGreetingText(modeRef.current));
     } catch (error) {
       teardown();
-      setErrorMessage(error instanceof Error ? error.message : "Could not start voice.");
+      setErrorMessage(describeVoiceStartError(error));
       updateState("error");
     }
   }, [
@@ -464,6 +644,7 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
   return {
     state,
     errorMessage,
+    caption,
     connect,
     toggle,
     stop,

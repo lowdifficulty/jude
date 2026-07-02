@@ -5,6 +5,7 @@ const PUBLIC_PREFIXES = [
   "/login",
   "/register",
   "/api/auth",
+  "/api/dev",
   "/api/integrations/gmail/callback",
   "/admin",
   "/api/admin",

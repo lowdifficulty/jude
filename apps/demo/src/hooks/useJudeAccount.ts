@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { JudeMode } from "@jude/store";
 import type { MarketplaceAppId } from "@/lib/marketplace-apps";
 
@@ -10,6 +9,7 @@ export type JudeAccountProfile = {
   appSettings: {
     weatherZip?: string;
     mode?: JudeMode;
+    personalityId?: string;
     dockOrder?: string[];
   };
   integrations: {
@@ -30,7 +30,6 @@ type AccountState = {
 };
 
 export function useJudeAccount() {
-  const router = useRouter();
   const [state, setState] = useState<AccountState>({
     loading: true,
     user: null,
@@ -38,29 +37,37 @@ export function useJudeAccount() {
   });
 
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/auth/session", { credentials: "include" });
-    const data = await response.json();
-    if (!data.authenticated || data.role !== "user") {
+    try {
+      const response = await fetch("/api/auth/session", { credentials: "include" });
+      const data = await response.json().catch(() => ({}));
+
+      if (data.authenticated && data.role === "admin") {
+        window.location.replace("/admin");
+        return null;
+      }
+
+      if (!data.authenticated || data.role !== "user" || !data.user) {
+        setState({ loading: false, user: null, profile: null });
+        window.location.replace("/login?next=/");
+        return null;
+      }
+
+      setState({
+        loading: false,
+        user: data.user,
+        profile: data.profile,
+      });
+      return data.profile as JudeAccountProfile;
+    } catch {
       setState({ loading: false, user: null, profile: null });
+      window.location.replace("/login?next=/");
       return null;
     }
-    setState({
-      loading: false,
-      user: data.user,
-      profile: data.profile,
-    });
-    return data.profile as JudeAccountProfile;
   }, []);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
-  useEffect(() => {
-    if (!state.loading && !state.user) {
-      router.replace("/login");
-    }
-  }, [router, state.loading, state.user]);
 
   const saveConnectedApps = useCallback(async (connectedAppIds: MarketplaceAppId[]) => {
     const response = await fetch("/api/auth/profile", {
@@ -80,7 +87,12 @@ export function useJudeAccount() {
   }, []);
 
   const saveAppSettings = useCallback(
-    async (input: { weatherZip?: string; mode?: JudeMode; dockOrder?: string[] }) => {
+    async (input: {
+      weatherZip?: string;
+      mode?: JudeMode;
+      personalityId?: string;
+      dockOrder?: string[];
+    }) => {
       const response = await fetch("/api/auth/profile", {
         method: "POST",
         credentials: "include",

@@ -17,11 +17,17 @@ function blobToken() {
   return process.env.BLOB_READ_WRITE_TOKEN || process.env.jude_READ_WRITE_TOKEN;
 }
 
+function isLocalDev() {
+  return process.env.NODE_ENV !== "production";
+}
+
 function useKvStorage() {
+  if (isLocalDev()) return false;
   return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
 function useBlobStorage() {
+  if (isLocalDev()) return false;
   return Boolean(
     blobToken() ||
       process.env.BLOB_STORE_ID ||

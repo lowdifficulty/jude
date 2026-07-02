@@ -53,6 +53,7 @@ export type UserProfile = {
   appSettings: {
     weatherZip?: string;
     mode?: JudeMode;
+    personalityId?: string;
     dockOrder?: string[];
   };
   integrations: UserIntegrations;

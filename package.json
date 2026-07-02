@@ -6,7 +6,7 @@
     "lib/jude-store"
   ],
   "scripts": {
-    "dev:demo": "npm run dev --workspace=@jude/demo",
+    "dev:demo": "node scripts/dev-demo.mjs",
     "dev:marketing": "npm run dev --workspace=@jude/marketing",
     "dev": "npm run dev:demo & npm run dev:marketing",
     "build:demo": "npm run build --workspace=@jude/demo",
@@ -14,7 +14,11 @@
     "build": "npm run build:demo && npm run build:marketing",
     "build:knowledge": "node scripts/build-knowledge-index.mjs",
     "build:site-data": "node scripts/generate-site-data.mjs",
-    "67": "npm run dev:demo",
+    "setup:local": "node scripts/setup-local-dev.mjs",
+    "migrate:users": "node scripts/migrate-legacy-users.mjs",
+    "seed:dev-user": "node scripts/seed-dev-user.mjs",
+    "67": "node scripts/dev-demo.mjs",
+    "test:localhost": "node scripts/test-localhost.mjs",
     "42": "node scripts/deploy.js"
   }
 }

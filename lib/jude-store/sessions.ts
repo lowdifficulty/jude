@@ -46,10 +46,12 @@ export function buildUserCookieValue(userId: string) {
 }
 
 export function parseUserCookieValue(raw: string | undefined) {
-  if (!raw?.includes(":")) return null;
-  const colon = raw.indexOf(":");
-  const userId = raw.slice(0, colon);
-  const sessionToken = raw.slice(colon + 1);
+  if (!raw) return null;
+  const decoded = decodeURIComponent(raw);
+  if (!decoded.includes(":")) return null;
+  const colon = decoded.indexOf(":");
+  const userId = decoded.slice(0, colon);
+  const sessionToken = decoded.slice(colon + 1);
   if (!userId || !sessionToken) return null;
   if (!verifySession(`user:${userId}`, sessionToken)) return null;
   return userId;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { JudeMode } from "@jude/store";
+import { isDwarfPlanetId } from "@/lib/dwarf-planet-profiles";
 import { getAuthenticatedUser } from "@jude/store";
 import {
   getOrCreateProfile,
@@ -44,9 +45,17 @@ export async function POST(request: Request) {
   }
 
   if (action === "appSettings") {
+    const nextMode =
+      body.mode === "good" || body.mode === "evil" ? (body.mode as JudeMode) : undefined;
     const profile = await updateAppSettings(user, {
       weatherZip: body.weatherZip ? String(body.weatherZip) : undefined,
-      mode: body.mode === "good" || body.mode === "evil" ? (body.mode as JudeMode) : undefined,
+      mode: nextMode,
+      personalityId:
+        nextMode === undefined &&
+        typeof body.personalityId === "string" &&
+        isDwarfPlanetId(body.personalityId)
+          ? body.personalityId
+          : undefined,
       dockOrder: Array.isArray(body.dockOrder) ? body.dockOrder.map(String) : undefined,
     });
     return NextResponse.json({ ok: true, profile: sanitizeProfileForClient(profile) });

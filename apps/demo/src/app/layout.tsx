@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { createSiteMetadata } from "@/lib/site-metadata";
-
 export const metadata: Metadata = createSiteMetadata();
 
 export const viewport: Viewport = {

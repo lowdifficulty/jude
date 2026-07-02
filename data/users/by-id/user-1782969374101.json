@@ -1,0 +1,8 @@
+{
+  "id": "user-1782969374101",
+  "username": "testuser123",
+  "displayName": "Test",
+  "passwordSalt": "23b2a62e22ad9585d2dd8d20cd6e0f70",
+  "passwordHash": "8bce8498d59c1fa1b55cd3aa788185b49d35d55330c6687ffbf8e39484dc39cd79ab30e53626e00b47c1bd02e64b7be255839222de8f5c8ad77d592f28f7402d",
+  "createdAt": "2026-07-02T05:16:14.101Z"
+}

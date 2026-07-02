@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useActionState } from "react";
-import { loginAction, registerAction, type AuthActionState } from "@/app/auth-actions";
 
 export function JudeAuthForm({ mode }: { mode: "login" | "register" }) {
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") || "/";
-  const action = mode === "register" ? registerAction : loginAction;
-  const [state, formAction, pending] = useActionState<AuthActionState | null, FormData>(
-    action,
-    null
-  );
+  const errorParam = searchParams.get("error");
+  const error =
+    errorParam === "invalid"
+      ? "Invalid username or password."
+      : errorParam
+        ? decodeURIComponent(errorParam)
+        : null;
+  const formAction = mode === "register" ? "/api/auth/sign-up" : "/api/auth/sign-in";
 
   return (
     <div className="jude-auth">
@@ -25,7 +26,7 @@ export function JudeAuthForm({ mode }: { mode: "login" | "register" }) {
             : "Register once. Your Jude saves everything securely to your account — same experience on every wall."}
         </p>
 
-        <form className="jude-auth__form" action={formAction}>
+        <form className="jude-auth__form" action={formAction} method="POST">
           <input type="hidden" name="next" value={nextPath} />
           {mode === "register" && (
             <label>
@@ -39,7 +40,7 @@ export function JudeAuthForm({ mode }: { mode: "login" | "register" }) {
           )}
           <label>
             Username
-            <input name="username" autoComplete="username" required />
+            <input name="username" autoComplete="username" required defaultValue={mode === "login" ? "33" : undefined} />
           </label>
           <label>
             Password
@@ -48,13 +49,20 @@ export function JudeAuthForm({ mode }: { mode: "login" | "register" }) {
               name="password"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               required
+              defaultValue={mode === "login" ? "33" : undefined}
             />
           </label>
-          {state?.error && <p className="jude-auth__error">{state.error}</p>}
-          <button type="submit" className="jude-auth__submit" disabled={pending}>
-            {pending ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+          {error && <p className="jude-auth__error">{error}</p>}
+          <button type="submit" className="jude-auth__submit">
+            {mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
+
+        {process.env.NODE_ENV === "development" && mode === "login" && (
+          <p className="jude-auth__switch jude-auth__local-hint">
+            <a href={`/api/dev/login?next=${encodeURIComponent(nextPath)}`}>Skip login (dev account 33)</a>
+          </p>
+        )}
 
         <p className="jude-auth__switch">
           {mode === "login" ? (

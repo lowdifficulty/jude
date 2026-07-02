@@ -50,9 +50,9 @@ export function getOpeningGreetingPrompt(mode: JudeVoiceMode) {
 /** Spoken immediately when the voice session connects — reliable first words. */
 export function getConnectGreetingText(mode: JudeVoiceMode) {
   if (mode === "evil") {
-    return "I rise. JUDE is awake, online, and ready to serve you, mortal.";
+    return "JUDE is awake. Speak, mortal.";
   }
-  return "Well hello there, honey. Jude is awake and ready to work for you.";
+  return "Hi honey — I'm listening.";
 }
 
 /** @deprecated Use getJudeInstructions(mode) */
