@@ -81,13 +81,13 @@ body {
   min-height: 100dvh;
   overflow: hidden;
   background: radial-gradient(
-    ellipse at 50% 45%,
+    ellipse at 50% 40%,
     #2a2218 0%,
     #1a1510 45%,
     #0f0d0a 100%
   );
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   padding:
     max(16px, env(safe-area-inset-top))
     max(16px, env(safe-area-inset-right))
@@ -177,20 +177,20 @@ body {
 }
 
 .jude-main {
-  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0;
+  /* Center in the header-to-menu zone only; nudge orb slightly above geometric center. */
+  padding-bottom: clamp(2rem, 6vh, 3.5rem);
 }
 
 .jude-orb {
   width: clamp(132px, 38vw, 260px);
   height: clamp(132px, 38vw, 260px);
-  max-width: min(260px, 42vh);
-  max-height: min(260px, 42vh);
+  max-width: min(260px, calc(100vw - 48px));
+  max-height: min(260px, calc(100dvh - 18rem));
   border-radius: 50%;
   border: none;
   background: radial-gradient(
@@ -271,12 +271,12 @@ body {
 
 @media (max-height: 640px) {
   .jude-main {
-    justify-content: flex-start;
-    padding-top: 0.25rem;
+    padding-bottom: clamp(1.25rem, 4vh, 2rem);
   }
 
   .jude-orb {
     width: clamp(112px, 30vw, 180px);
     height: clamp(112px, 30vw, 180px);
+    max-height: min(180px, calc(100dvh - 14rem));
   }
 }
