@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type JudeVoiceState =
   | "idle"
@@ -55,6 +55,13 @@ function extractAssistantText(message: Record<string, unknown>) {
   return "";
 }
 
+function unlockAudioPlayback() {
+  const audio = new Audio();
+  audio.src =
+    "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+  audio.play().catch(() => {});
+}
+
 export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
   const [state, setState] = useState<JudeVoiceState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -64,56 +71,92 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackDoneRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(false);
+  const optionsRef = useRef(options);
 
-  const updateState = useCallback(
-    (next: JudeVoiceState) => {
-      setState(next);
-      options.onStateChange?.(next);
-    },
-    [options]
-  );
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
-  const playElevenLabs = useCallback(async (text: string) => {
-    updateState("speaking");
-    const response = await fetch("/api/voice/speak", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
+  const updateState = useCallback((next: JudeVoiceState) => {
+    setState(next);
+    optionsRef.current.onStateChange?.(next);
+  }, []);
 
-    if (!response.ok) {
-      throw new Error("ElevenLabs speech failed");
-    }
+  const teardown = useCallback(() => {
+    activeRef.current = false;
+    dcRef.current?.close();
+    pcRef.current?.close();
+    dcRef.current = null;
+    pcRef.current = null;
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
+    micStreamRef.current?.getTracks().forEach((track) => track.stop());
+    micStreamRef.current = null;
 
     if (audioRef.current) {
       audioRef.current.pause();
-      URL.revokeObjectURL(audioRef.current.src);
+      audioRef.current = null;
     }
 
-    const audio = new Audio(url);
-    audioRef.current = audio;
+    playbackDoneRef.current?.();
+    playbackDoneRef.current = null;
+  }, []);
 
-    await new Promise<void>((resolve, reject) => {
-      playbackDoneRef.current = resolve;
-      audio.onended = () => {
-        playbackDoneRef.current = null;
-        resolve();
-      };
-      audio.onerror = () => {
-        playbackDoneRef.current = null;
-        reject(new Error("Audio playback failed"));
-      };
-      audio.play().catch((err) => {
-        playbackDoneRef.current = null;
-        reject(err);
+  const stop = useCallback(() => {
+    teardown();
+    setError(null);
+    updateState("idle");
+  }, [teardown, updateState]);
+
+  const playElevenLabs = useCallback(
+    async (text: string) => {
+      updateState("speaking");
+      const response = await fetch("/api/voice/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
       });
-    });
 
-    URL.revokeObjectURL(url);
-  }, [updateState]);
+      if (!response.ok) {
+        return false;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          playbackDoneRef.current = resolve;
+          audio.onended = () => {
+            playbackDoneRef.current = null;
+            resolve();
+          };
+          audio.onerror = () => {
+            playbackDoneRef.current = null;
+            reject(new Error("Audio playback failed"));
+          };
+          audio.play().catch((err) => {
+            playbackDoneRef.current = null;
+            reject(err);
+          });
+        });
+      } catch {
+        return false;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+
+      return true;
+    },
+    [updateState]
+  );
 
   const handleFunctionCall = useCallback(
     async (name: string, argsJson: string, callId: string) => {
@@ -165,27 +208,6 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
     []
   );
 
-  const stop = useCallback(() => {
-    activeRef.current = false;
-    dcRef.current?.close();
-    pcRef.current?.close();
-    dcRef.current = null;
-    pcRef.current = null;
-
-    micStreamRef.current?.getTracks().forEach((track) => track.stop());
-    micStreamRef.current = null;
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    playbackDoneRef.current?.();
-    playbackDoneRef.current = null;
-
-    updateState("idle");
-  }, [updateState]);
-
   const interrupt = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -203,25 +225,39 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
   const start = useCallback(async () => {
     if (activeRef.current) return;
 
+    unlockAudioPlayback();
     setError(null);
     updateState("connecting");
     activeRef.current = true;
 
     try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!activeRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      micStreamRef.current = stream;
+
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
       });
       pcRef.current = pc;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream;
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       const dc = pc.createDataChannel("oai-events");
       dcRef.current = dc;
 
       dc.onopen = () => {
-        updateState("listening");
+        if (activeRef.current) updateState("listening");
+      };
+
+      dc.onclose = () => {
+        if (activeRef.current) {
+          teardown();
+          updateState("idle");
+        }
       };
 
       dc.onmessage = async (event) => {
@@ -234,14 +270,12 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
         ) {
           const text = extractAssistantText(message);
           if (text) {
-            options.onTranscript?.(text, "assistant");
-            try {
-              await playElevenLabs(text);
-              if (activeRef.current) updateState("listening");
-            } catch {
-              setError("Could not play Jude's voice");
-              updateState("error");
+            optionsRef.current.onTranscript?.(text, "assistant");
+            const spoke = await playElevenLabs(text);
+            if (!spoke && activeRef.current) {
+              setError("Voice playback unavailable — read Jude's reply above.");
             }
+            if (activeRef.current) updateState("listening");
           }
         }
 
@@ -259,13 +293,14 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
           message.type === "conversation.item.input_audio_transcription.done"
         ) {
           const transcript = String(message.transcript || "").trim();
-          if (transcript) options.onTranscript?.(transcript, "user");
+          if (transcript) optionsRef.current.onTranscript?.(transcript, "user");
         }
 
         if (message.type === "error") {
           const err = message.error as { message?: string } | undefined;
           setError(err?.message || "Voice session error");
           updateState("error");
+          teardown();
         }
       };
 
@@ -287,13 +322,12 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
       const answerSdp = await sdpResponse.text();
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
     } catch (err) {
-      activeRef.current = false;
+      teardown();
       const message = err instanceof Error ? err.message : "Voice failed to start";
       setError(message);
       updateState("error");
-      stop();
     }
-  }, [handleFunctionCall, options, playElevenLabs, stop, updateState]);
+  }, [handleFunctionCall, playElevenLabs, teardown, updateState]);
 
   return {
     state,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useJudeVoice } from "@/hooks/useJudeVoice";
 
 function formatTime(date: Date) {
@@ -60,8 +60,6 @@ const statusItems = [
 export function JudeInterface() {
   const [time, setTime] = useState<string>("");
   const [caption, setCaption] = useState<string>("");
-  const longPressTimerRef = useRef<number | null>(null);
-  const suppressClickRef = useRef(false);
   const { state, error, isActive, start, stop, interrupt } = useJudeVoice({
     onTranscript: (text, role) => {
       if (role === "assistant") setCaption(text);
@@ -82,42 +80,15 @@ export function JudeInterface() {
     state === "connecting"
       ? "Connecting…"
       : state === "listening"
-        ? "Listening… Hold to end"
+        ? "Listening…"
         : state === "thinking"
-          ? "Thinking… Hold to end"
+          ? "Thinking…"
           : state === "speaking"
-            ? "Tap to interrupt · Hold to end"
+            ? "Speaking…"
             : "Tap to talk to Jude";
 
-  const clearLongPressTimer = () => {
-    if (longPressTimerRef.current !== null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-
-  const handleOrbPointerDown = () => {
-    if (!isActive) return;
-
-    clearLongPressTimer();
-    longPressTimerRef.current = window.setTimeout(() => {
-      suppressClickRef.current = true;
-      stop();
-      longPressTimerRef.current = null;
-    }, 650);
-  };
-
-  const handleOrbPointerUp = () => {
-    clearLongPressTimer();
-  };
-
   const handleOrbClick = () => {
-    if (suppressClickRef.current) {
-      suppressClickRef.current = false;
-      return;
-    }
-
-    if (!isActive) {
+    if (state === "error" || !isActive) {
       start();
       return;
     }
@@ -126,8 +97,6 @@ export function JudeInterface() {
       interrupt();
     }
   };
-
-  useEffect(() => clearLongPressTimer, []);
 
   return (
     <div
@@ -241,10 +210,6 @@ export function JudeInterface() {
           type="button"
           aria-label={voiceHint}
           onClick={handleOrbClick}
-          onPointerDown={handleOrbPointerDown}
-          onPointerUp={handleOrbPointerUp}
-          onPointerLeave={clearLongPressTimer}
-          onPointerCancel={clearLongPressTimer}
           style={{
             width: "clamp(140px, 22vw, 260px)",
             height: "clamp(140px, 22vw, 260px)",
@@ -274,6 +239,24 @@ export function JudeInterface() {
         >
           {error || voiceHint}
         </p>
+        {isActive && (
+          <button
+            type="button"
+            onClick={stop}
+            style={{
+              background: "transparent",
+              border: "1px solid rgba(245, 240, 234, 0.2)",
+              borderRadius: 999,
+              color: "rgba(245, 240, 234, 0.65)",
+              cursor: "pointer",
+              fontSize: "0.85rem",
+              fontWeight: 300,
+              padding: "0.45rem 1rem",
+            }}
+          >
+            End conversation
+          </button>
+        )}
         {caption && !error && (
           <p
             style={{
