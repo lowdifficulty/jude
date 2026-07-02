@@ -15,12 +15,54 @@ type UseJudeVoiceOptions = {
   onStateChange?: (state: JudeVoiceState) => void;
 };
 
+function waitForIceGathering(pc: RTCPeerConnection) {
+  if (pc.iceGatheringState === "complete") return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const check = () => {
+      if (pc.iceGatheringState === "complete") {
+        pc.removeEventListener("icegatheringstatechange", check);
+        resolve();
+      }
+    };
+    pc.addEventListener("icegatheringstatechange", check);
+    setTimeout(resolve, 2500);
+  });
+}
+
+function extractAssistantText(message: Record<string, unknown>) {
+  if (typeof message.text === "string" && message.text.trim()) {
+    return message.text.trim();
+  }
+
+  if (message.type === "response.done") {
+    const response = message.response as {
+      output?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>;
+    };
+    const parts: string[] = [];
+    for (const item of response?.output || []) {
+      for (const block of item.content || []) {
+        if (
+          (block.type === "output_text" || block.type === "text") &&
+          block.text?.trim()
+        ) {
+          parts.push(block.text.trim());
+        }
+      }
+    }
+    if (parts.length) return parts.join("\n");
+  }
+
+  return "";
+}
+
 export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
   const [state, setState] = useState<JudeVoiceState>("idle");
   const [error, setError] = useState<string | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playbackDoneRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(false);
 
   const updateState = useCallback(
@@ -55,9 +97,19 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
     audioRef.current = audio;
 
     await new Promise<void>((resolve, reject) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => reject(new Error("Audio playback failed"));
-      audio.play().catch(reject);
+      playbackDoneRef.current = resolve;
+      audio.onended = () => {
+        playbackDoneRef.current = null;
+        resolve();
+      };
+      audio.onerror = () => {
+        playbackDoneRef.current = null;
+        reject(new Error("Audio playback failed"));
+      };
+      audio.play().catch((err) => {
+        playbackDoneRef.current = null;
+        reject(err);
+      });
     });
 
     URL.revokeObjectURL(url);
@@ -120,45 +172,49 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
     dcRef.current = null;
     pcRef.current = null;
 
+    micStreamRef.current?.getTracks().forEach((track) => track.stop());
+    micStreamRef.current = null;
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
 
+    playbackDoneRef.current?.();
+    playbackDoneRef.current = null;
+
     updateState("idle");
   }, [updateState]);
 
-  const start = useCallback(async () => {
-    if (activeRef.current) {
-      stop();
-      return;
+  const interrupt = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
+
+    playbackDoneRef.current?.();
+    playbackDoneRef.current = null;
+
+    if (activeRef.current) {
+      updateState("listening");
+    }
+  }, [updateState]);
+
+  const start = useCallback(async () => {
+    if (activeRef.current) return;
 
     setError(null);
     updateState("connecting");
     activeRef.current = true;
 
     try {
-      const sessionRes = await fetch("/api/voice/session", { method: "POST" });
-      if (!sessionRes.ok) {
-        const data = await sessionRes.json().catch(() => ({}));
-        throw new Error(data.error || "Could not start Jude voice session");
-      }
-
-      const session = await sessionRes.json();
-      const ephemeralKey = session.client_secret?.value;
-      if (!ephemeralKey) {
-        throw new Error("Missing realtime session token");
-      }
-
-      const pc = new RTCPeerConnection();
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
       pcRef.current = pc;
 
-      pc.ontrack = () => {
-        // Audio output handled by ElevenLabs
-      };
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       const dc = pc.createDataChannel("oai-events");
@@ -166,23 +222,17 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
 
       dc.onopen = () => {
         updateState("listening");
-        dc.send(
-          JSON.stringify({
-            type: "session.update",
-            session: {
-              modalities: ["text"],
-              input_audio_transcription: { model: "whisper-1" },
-              turn_detection: { type: "server_vad" },
-            },
-          })
-        );
       };
 
       dc.onmessage = async (event) => {
-        const message = JSON.parse(event.data);
+        const message = JSON.parse(event.data) as Record<string, unknown>;
 
-        if (message.type === "response.text.done") {
-          const text = message.text?.trim();
+        if (
+          message.type === "response.text.done" ||
+          message.type === "response.output_text.done" ||
+          message.type === "response.done"
+        ) {
+          const text = extractAssistantText(message);
           if (text) {
             options.onTranscript?.(text, "assistant");
             try {
@@ -198,44 +248,44 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
         if (message.type === "response.function_call_arguments.done") {
           updateState("thinking");
           await handleFunctionCall(
-            message.name,
-            message.arguments,
-            message.call_id
+            String(message.name || ""),
+            String(message.arguments || ""),
+            String(message.call_id || "")
           );
         }
 
-        if (message.type === "conversation.item.input_audio_transcription.completed") {
-          const transcript = message.transcript?.trim();
+        if (
+          message.type === "conversation.item.input_audio_transcription.completed" ||
+          message.type === "conversation.item.input_audio_transcription.done"
+        ) {
+          const transcript = String(message.transcript || "").trim();
           if (transcript) options.onTranscript?.(transcript, "user");
         }
 
         if (message.type === "error") {
-          setError(message.error?.message || "Voice session error");
+          const err = message.error as { message?: string } | undefined;
+          setError(err?.message || "Voice session error");
           updateState("error");
         }
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      await waitForIceGathering(pc);
 
-      const sdpResponse = await fetch(
-        "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${ephemeralKey}`,
-            "Content-Type": "application/sdp",
-          },
-          body: offer.sdp,
-        }
-      );
+      const sdpResponse = await fetch("/api/voice/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/sdp" },
+        body: pc.localDescription?.sdp || offer.sdp,
+      });
 
       if (!sdpResponse.ok) {
-        throw new Error("Could not connect to OpenAI Realtime");
+        const data = await sdpResponse.json().catch(() => ({}));
+        throw new Error(data.error || "Could not connect to OpenAI Realtime");
       }
 
-      const answer = { type: "answer" as const, sdp: await sdpResponse.text() };
-      await pc.setRemoteDescription(answer);
+      const answerSdp = await sdpResponse.text();
+      await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
     } catch (err) {
       activeRef.current = false;
       const message = err instanceof Error ? err.message : "Voice failed to start";
@@ -251,5 +301,6 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
     isActive: state !== "idle" && state !== "error",
     start,
     stop,
+    interrupt,
   };
 }
