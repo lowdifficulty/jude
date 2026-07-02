@@ -1,14 +1,15 @@
-import { JUDE_BASE_INSTRUCTIONS } from "@/lib/jude-system-prompt";
+import { getJudeInstructions } from "@/lib/jude-system-prompt";
+import type { JudeVoiceMode } from "@/lib/voice-profiles";
 
 export const REALTIME_MODEL =
   process.env.OPENAI_REALTIME_MODEL || "gpt-realtime";
 
-export function getRealtimeSessionConfig() {
+export function getRealtimeSessionConfig(mode: JudeVoiceMode = "good") {
   return {
     type: "realtime" as const,
     model: REALTIME_MODEL,
     output_modalities: ["text"],
-    instructions: JUDE_BASE_INSTRUCTIONS,
+    instructions: getJudeInstructions(mode),
     tool_choice: "auto" as const,
     tools: [
       {

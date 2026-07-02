@@ -13,8 +13,34 @@ Copy `apps/demo/.env.example` to `apps/demo/.env.local`:
 ```bash
 OPENAI_API_KEY=sk-...
 ELEVENLABS_API_KEY=...
-ELEVENLABS_VOICE_ID=...   # optional; pick a warm voice in ElevenLabs dashboard
+
+# Good mode — Southern charm, older lady (Jude Good — Southern Matriarch)
+ELEVENLABS_VOICE_ID_GOOD=NsgfkY3cyxRG0efoRKYW
+
+# Evil mode — devilish / robotic delivery (Jude Evil — Devilish Robot)
+ELEVENLABS_VOICE_ID_EVIL=jEPqu2Z6cBH4GJyan8ZY
+
+# Optional fallback if GOOD/EVIL not set
+ELEVENLABS_VOICE_ID=...
 ```
+
+### Picking voices in ElevenLabs
+
+Jude ships with two **custom voices** created via ElevenLabs Voice Design (saved in your ElevenLabs account as **Jude Good - Southern Matriarch** and **Jude Evil - Devilish Robot**). To swap them later:
+
+1. Open [ElevenLabs → My Voices](https://elevenlabs.io/app/voice-lab)
+2. Create or pick replacements
+3. Copy each voice ID (⋯ → Copy voice ID)
+4. Update `ELEVENLABS_VOICE_ID_GOOD` / `ELEVENLABS_VOICE_ID_EVIL` in `.env.local` and on Vercel
+
+**Production (jude.one):** add the same voice ID env vars to the Vercel **jude-demo** project — the voices must belong to the same ElevenLabs account as `ELEVENLABS_API_KEY`.
+
+The **Good / Evil toggle** on jude.one switches both:
+
+- **Personality** (OpenAI Realtime instructions — what Jude writes)
+- **Voice** (ElevenLabs voice ID + TTS settings)
+
+Toggle mode before tapping the orb, or switch mid-session (the voice session stops and reconnects on the next tap).
 
 ## 2. Build the knowledge index
 

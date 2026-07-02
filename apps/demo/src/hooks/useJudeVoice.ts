@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getJudeInstructions, getOpeningGreetingPrompt } from "@/lib/jude-system-prompt";
+import type { JudeVoiceMode } from "@/lib/voice-profiles";
 
 export type JudeVoiceState =
   | "idle"
@@ -64,7 +66,7 @@ function unlockAudioPlayback() {
   audio.play().catch(() => {});
 }
 
-export function useJudeVoice() {
+export function useJudeVoice(mode: JudeVoiceMode = "good") {
   const [state, setState] = useState<JudeVoiceState>("idle");
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -72,6 +74,9 @@ export function useJudeVoice() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackDoneRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(false);
+  const greetedRef = useRef(false);
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   const updateState = useCallback((next: JudeVoiceState) => {
     setState(next);
@@ -101,13 +106,61 @@ export function useJudeVoice() {
     updateState("idle");
   }, [teardown, updateState]);
 
+  const applySessionMode = useCallback((nextMode: JudeVoiceMode) => {
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open" || !activeRef.current) return;
+
+    dc.send(
+      JSON.stringify({
+        type: "session.update",
+        session: {
+          instructions: getJudeInstructions(nextMode),
+        },
+      })
+    );
+  }, []);
+
+  const interruptPlayback = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    if (playbackDoneRef.current) {
+      playbackDoneRef.current();
+      playbackDoneRef.current = null;
+    }
+  }, []);
+
+  const triggerOpeningGreeting = useCallback(() => {
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open" || !activeRef.current || greetedRef.current) {
+      return;
+    }
+
+    greetedRef.current = true;
+    updateState("thinking");
+
+    dc.send(
+      JSON.stringify({
+        type: "response.create",
+        response: {
+          instructions: getOpeningGreetingPrompt(modeRef.current),
+        },
+      })
+    );
+  }, [updateState]);
+
   const playElevenLabs = useCallback(
     async (text: string) => {
       updateState("speaking");
       const response = await fetch("/api/voice/speak", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        headers: {
+          "Content-Type": "application/json",
+          "X-Jude-Mode": modeRef.current,
+        },
+        body: JSON.stringify({ text, mode: modeRef.current }),
       });
 
       if (!response.ok || !activeRef.current) {
@@ -208,6 +261,7 @@ export function useJudeVoice() {
 
     unlockAudioPlayback();
     activeRef.current = true;
+    greetedRef.current = false;
     updateState("connecting");
 
     try {
@@ -244,7 +298,9 @@ export function useJudeVoice() {
       dcRef.current = dc;
 
       dc.onopen = () => {
-        if (activeRef.current) updateState("listening");
+        if (!activeRef.current) return;
+        applySessionMode(modeRef.current);
+        triggerOpeningGreeting();
       };
 
       dc.onclose = () => {
@@ -291,7 +347,10 @@ export function useJudeVoice() {
 
       const sdpResponse = await fetch("/api/voice/connect", {
         method: "POST",
-        headers: { "Content-Type": "application/sdp" },
+        headers: {
+          "Content-Type": "application/sdp",
+          "X-Jude-Mode": modeRef.current,
+        },
         body: pc.localDescription?.sdp || offer.sdp,
       });
 
@@ -306,7 +365,7 @@ export function useJudeVoice() {
       teardown();
       updateState("error");
     }
-  }, [handleFunctionCall, playElevenLabs, stop, teardown, updateState]);
+  }, [applySessionMode, handleFunctionCall, playElevenLabs, stop, teardown, triggerOpeningGreeting, updateState]);
 
   const toggle = useCallback(() => {
     if (activeRef.current || state === "connecting") {
@@ -316,6 +375,17 @@ export function useJudeVoice() {
 
     void connect();
   }, [connect, state, stop]);
+
+  useEffect(() => {
+    if (!activeRef.current) return;
+
+    interruptPlayback();
+    applySessionMode(mode);
+
+    setState((current) =>
+      current === "speaking" || current === "thinking" ? "listening" : current
+    );
+  }, [mode, applySessionMode, interruptPlayback]);
 
   return {
     state,

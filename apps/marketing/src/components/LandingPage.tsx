@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
 
@@ -131,19 +130,6 @@ function formatPrice(amount: number) {
 }
 
 export function LandingPage() {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setSubmitted(true);
-    setLoading(false);
-  }
-
   return (
     <div className="landing">
       <SiteNav />
@@ -380,57 +366,14 @@ export function LandingPage() {
             when we launch.
           </p>
 
-          {submitted ? (
-            <div className="register-success">
-              <p style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
-                Welcome to the family, {name || "friend"}.
-              </p>
-              <p
-                style={{
-                  color: "rgba(245,240,234,0.55)",
-                  fontSize: "0.95rem",
-                }}
-              >
-                Check your inbox at {email}. In the meantime,{" "}
-                <a
-                  href="https://jude.one"
-                  style={{ color: "#ffd080", textDecoration: "underline" }}
-                >
-                  try the demo
-                </a>
-                .
-              </p>
-            </div>
-          ) : (
-            <form className="register-form" onSubmit={handleSubmit}>
-              <input
-                type="text"
-                placeholder="Your name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <input
-                type="email"
-                placeholder="Email address"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary"
-                style={{
-                  marginTop: "0.5rem",
-                  opacity: loading ? 0.7 : 1,
-                  cursor: loading ? "wait" : "pointer",
-                }}
-              >
-                {loading ? "Creating account…" : "Create account & try demo"}
-              </button>
-            </form>
-          )}
+          <div className="register-actions" style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <Link href="/register" className="btn-primary">
+              Create your Jude account
+            </Link>
+            <Link href="/login" className="btn-secondary">
+              Sign in
+            </Link>
+          </div>
         </div>
       </section>
 

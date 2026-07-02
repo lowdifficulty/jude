@@ -1,8 +1,15 @@
 import fs from "fs";
 import path from "path";
 import type { KnowledgeIndex, KnowledgeSearchResult } from "./types";
+import { readAdminOverrides } from "@jude/store/training";
+import { getAuthenticatedUser } from "@jude/store";
+import { getOrCreateProfile, profileToKnowledgeChunks } from "@jude/store/profiles";
 
 let cachedIndex: KnowledgeIndex | null = null;
+
+export function invalidateKnowledgeCache() {
+  cachedIndex = null;
+}
 
 function cosineSimilarity(a: number[], b: number[]) {
   let dot = 0;
@@ -30,10 +37,28 @@ function keywordScore(query: string, text: string) {
   return hits / terms.length;
 }
 
+function extraChunks() {
+  const chunks: KnowledgeIndex["chunks"] = [];
+
+  for (const entry of readAdminOverrides()) {
+    chunks.push({
+      id: entry.id,
+      title: entry.title,
+      slug: "/admin-training/",
+      text: `[${entry.category}] ${entry.text}`,
+      meta: null,
+    });
+  }
+
+  return chunks;
+}
+
 export async function loadKnowledgeIndex(): Promise<KnowledgeIndex> {
   if (cachedIndex) return cachedIndex;
   const file = path.join(process.cwd(), "knowledge/index.json");
-  cachedIndex = JSON.parse(fs.readFileSync(file, "utf8")) as KnowledgeIndex;
+  const index = JSON.parse(fs.readFileSync(file, "utf8")) as KnowledgeIndex;
+  index.chunks = [...extraChunks(), ...index.chunks];
+  cachedIndex = index;
   return cachedIndex;
 }
 
@@ -44,6 +69,19 @@ export async function searchKnowledge(
   const index = await loadKnowledgeIndex();
   const apiKey = process.env.OPENAI_API_KEY;
 
+  const user = await getAuthenticatedUser();
+  const personalChunks = user
+    ? profileToKnowledgeChunks(getOrCreateProfile(user)).map((chunk) => ({
+        id: chunk.id,
+        title: chunk.title,
+        slug: "/my-jude/",
+        text: chunk.text,
+        meta: null,
+      }))
+    : [];
+
+  const allChunks = [...personalChunks, ...index.chunks];
+
   if (index.embedded && apiKey) {
     const OpenAI = (await import("openai")).default;
     const openai = new OpenAI({ apiKey });
@@ -53,19 +91,22 @@ export async function searchKnowledge(
     });
 
     const vector = embedding.data[0].embedding;
-    return index.chunks
+    return allChunks
       .map((chunk) => ({
         id: chunk.id,
         title: chunk.title,
         slug: chunk.slug,
         text: chunk.text,
-        score: chunk.embedding ? cosineSimilarity(vector, chunk.embedding) : 0,
+        score:
+          "embedding" in chunk && chunk.embedding
+            ? cosineSimilarity(vector, chunk.embedding)
+            : keywordScore(query, `${chunk.title}\n${chunk.text}`),
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
   }
 
-  return index.chunks
+  return allChunks
     .map((chunk) => ({
       id: chunk.id,
       title: chunk.title,

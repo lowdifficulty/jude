@@ -51,6 +51,12 @@ export function SiteNav() {
               {item.label}
             </Link>
           ))}
+          <Link href="/onboarding" onClick={() => setMenuOpen(false)}>
+            Connect
+          </Link>
+          <Link href="/login" onClick={() => setMenuOpen(false)}>
+            Login
+          </Link>
           <a
             href="https://jude.one"
             target="_blank"

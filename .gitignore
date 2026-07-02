@@ -9,4 +9,5 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
-content-package/
+data/profiles/*.json
+!data/profiles/.gitkeep

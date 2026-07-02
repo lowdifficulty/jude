@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { JudeExplosionFX, JudeMatrixRain, JudeRestoreFX } from "@/components/JudeExplosionFX";
+import { JudeFooterDock } from "@/components/JudeFooterDock";
+import { JudeGames, type GameId } from "@/components/JudeGames";
+import { JudeMarketplace } from "@/components/JudeMarketplace";
+import { JudeOrb } from "@/components/JudeOrb";
 import { useJudeVoice } from "@/hooks/useJudeVoice";
+import {
+  loadConnectedApps,
+  saveConnectedApps,
+  type MarketplaceAppId,
+} from "@/lib/marketplace-apps";
 
 type JudeMode = "good" | "evil";
+type BlastPhase = "idle" | "out" | "in";
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("en-US", {
@@ -13,102 +24,49 @@ function formatTime(date: Date) {
   });
 }
 
-const goodStatusItems = [
-  {
-    id: "lighting",
-    label: "Lighting",
-    value: "Warm",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 18h6M10 22h4M12 2a6 6 0 0 0-4 10.5V16h8v-3.5A6 6 0 0 0 12 2z" />
-      </svg>
-    ),
-  },
-  {
-    id: "climate",
-    label: "Climate",
-    value: "72°",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
-      </svg>
-    ),
-  },
-  {
-    id: "music",
-    label: "Music",
-    value: "Acoustic",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 18V5l12-2v13" />
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="16" r="3" />
-      </svg>
-    ),
-  },
-  {
-    id: "home",
-    label: "Home",
-    value: "All calm",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-        <path d="M9 21V12h6v9" />
-      </svg>
-    ),
-  },
-];
-
-const evilStatusItems = [
-  {
-    id: "lighting",
-    label: "Lighting",
-    value: "Blood red",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 18h6M10 22h4M12 2a6 6 0 0 0-4 10.5V16h8v-3.5A6 6 0 0 0 12 2z" />
-      </svg>
-    ),
-  },
-  {
-    id: "climate",
-    label: "Climate",
-    value: "666°",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
-      </svg>
-    ),
-  },
-  {
-    id: "music",
-    label: "Music",
-    value: "Doom",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 18V5l12-2v13" />
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="16" r="3" />
-      </svg>
-    ),
-  },
-  {
-    id: "home",
-    label: "Home",
-    value: "All watched",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
-];
-
 export function JudeInterface() {
   const [time, setTime] = useState<string>("");
   const [mode, setMode] = useState<JudeMode>("good");
-  const { state, toggle } = useJudeVoice();
+  const [connectedApps, setConnectedApps] = useState<MarketplaceAppId[]>([]);
+  const [gamesOpen, setGamesOpen] = useState(false);
+  const [marketplaceOpen, setMarketplaceOpen] = useState(false);
+  const [activeGame, setActiveGame] = useState<GameId>("menu");
+  const [blastPhase, setBlastPhase] = useState<BlastPhase>("idle");
+  const [evilBlackhole, setEvilBlackhole] = useState(false);
+  const blastTimersRef = useRef<number[]>([]);
+  const evilBlastCountRef = useRef(0);
+  const { state, toggle } = useJudeVoice(mode);
+
+  const clearBlastTimers = useCallback(() => {
+    blastTimersRef.current.forEach((id) => window.clearTimeout(id));
+    blastTimersRef.current = [];
+  }, []);
+
+  const handleExplosion = useCallback(() => {
+    clearBlastTimers();
+    setGamesOpen(false);
+    setMarketplaceOpen(false);
+    setActiveGame("menu");
+
+    const isEvilBlast = mode === "evil";
+    let useBlackhole = false;
+    if (isEvilBlast) {
+      evilBlastCountRef.current += 1;
+      useBlackhole = evilBlastCountRef.current % 2 === 0;
+    }
+    setEvilBlackhole(useBlackhole);
+    setBlastPhase("out");
+
+    blastTimersRef.current = [
+      window.setTimeout(() => setBlastPhase("in"), 260),
+      window.setTimeout(() => {
+        setBlastPhase("idle");
+        setEvilBlackhole(false);
+      }, 750),
+    ];
+  }, [clearBlastTimers, mode]);
+
+  useEffect(() => () => clearBlastTimers(), [clearBlastTimers]);
 
   useEffect(() => {
     const update = () => setTime(formatTime(new Date()));
@@ -122,6 +80,16 @@ export function JudeInterface() {
     if (saved === "good" || saved === "regular" || saved === "evil") {
       setMode(saved === "regular" ? "good" : saved);
     }
+    setConnectedApps(loadConnectedApps());
+  }, []);
+
+  const handleConnectionsChange = useCallback((ids: MarketplaceAppId[]) => {
+    setConnectedApps(ids);
+  }, []);
+
+  const handleFooterReorder = useCallback((ids: MarketplaceAppId[]) => {
+    setConnectedApps(ids);
+    saveConnectedApps(ids);
   }, []);
 
   useEffect(() => {
@@ -134,30 +102,42 @@ export function JudeInterface() {
   }, [mode]);
 
   const isEvil = mode === "evil";
-  const statusItems = isEvil ? evilStatusItems : goodStatusItems;
 
-  const orbClass =
-    state === "connecting"
-      ? "jude-orb jude-orb--connecting"
-      : state === "listening" || state === "thinking"
-        ? "jude-orb jude-orb--live"
-        : state === "speaking"
-          ? "jude-orb jude-orb--speaking"
-          : state === "error"
-            ? "jude-orb jude-orb--error"
-            : "jude-orb";
+  const handleOpenApp = useCallback((id: MarketplaceAppId) => {
+    if (id === "games") {
+      setActiveGame("menu");
+      setGamesOpen(true);
+    }
+  }, []);
 
-  const ariaLabel =
-    state === "idle" || state === "error"
-      ? isEvil
-        ? "Summon Jude"
-        : "Tap to talk to Jude"
-      : isEvil
-        ? "Banish Jude"
-        : "Tap to stop talking to Jude";
+  const openMarketplace = () => {
+    setMarketplaceOpen(true);
+  };
+
+  const closeMarketplace = () => {
+    setMarketplaceOpen(false);
+  };
+
+  const closeGames = () => {
+    setGamesOpen(false);
+    setActiveGame("menu");
+  };
 
   return (
-    <div className={`jude-shell${isEvil ? " jude-shell--evil" : ""}`}>
+    <div
+      className={`jude-shell${isEvil ? " jude-shell--evil" : ""}${blastPhase === "out" ? " jude-shell--blast-out" : ""}${blastPhase === "in" ? " jude-shell--blast-in" : ""}${evilBlackhole && blastPhase !== "idle" ? " jude-shell--blackhole" : ""}`}
+    >
+      {isEvil && (blastPhase === "out" || blastPhase === "in") && (
+        <div className="jude-matrix-backdrop" aria-hidden="true">
+          <JudeMatrixRain phase={blastPhase === "out" ? "out" : "in"} />
+        </div>
+      )}
+
+      {blastPhase === "out" && (
+        <JudeExplosionFX mode={mode} blackhole={evilBlackhole} />
+      )}
+      {blastPhase === "in" && mode !== "evil" && <JudeRestoreFX mode={mode} />}
+
       {isEvil && <div className="jude-evil-vignette" aria-hidden="true" />}
 
       <header className="jude-header">
@@ -201,28 +181,31 @@ export function JudeInterface() {
       </header>
 
       <div className="jude-main">
-        <button
-          type="button"
-          className={orbClass}
-          aria-label={ariaLabel}
-          aria-pressed={state !== "idle" && state !== "error"}
-          onClick={toggle}
-        >
-          {isEvil && <span className="jude-orb__core" aria-hidden="true" />}
-        </button>
+        <JudeOrb mode={mode} state={state} onToggle={toggle} onExplosion={handleExplosion} />
       </div>
 
-      <footer className="jude-status">
-        {statusItems.map((item) => (
-          <div key={item.id} className="jude-status-item">
-            <div className="jude-status-icon">{item.icon}</div>
-            <div>
-              <div className="jude-status-label">{item.label}</div>
-              <div className="jude-status-value">{item.value}</div>
-            </div>
-          </div>
-        ))}
-      </footer>
+      <JudeFooterDock
+        mode={mode}
+        connectedIds={connectedApps}
+        onOpenMarketplace={openMarketplace}
+        onOpenApp={handleOpenApp}
+        onReorder={handleFooterReorder}
+      />
+
+      <JudeMarketplace
+        mode={mode}
+        open={marketplaceOpen && blastPhase === "idle"}
+        onClose={closeMarketplace}
+        onConnectionsChange={handleConnectionsChange}
+      />
+
+      <JudeGames
+        mode={mode}
+        open={gamesOpen && blastPhase === "idle"}
+        onClose={closeGames}
+        game={activeGame}
+        onGameChange={setActiveGame}
+      />
     </div>
   );
 }

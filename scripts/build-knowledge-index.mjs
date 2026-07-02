@@ -15,6 +15,7 @@ const EXTRA_FILES = [
   "01-global-copy-and-design-system.md",
   "02-homepage-full.md",
   "05-master-benefit-outline.md",
+  "06-jude-connections-and-benefits.md",
   "content-model.json",
 ];
 
@@ -95,6 +96,21 @@ function collectSources() {
         primary_keyword: data.primary_keyword,
       },
     });
+  }
+
+  const trainingDir = path.join(CONTENT_DIR, "training");
+  if (fs.existsSync(trainingDir)) {
+    for (const file of fs.readdirSync(trainingDir)) {
+      if (!file.endsWith(".md")) continue;
+      const raw = fs.readFileSync(path.join(trainingDir, file), "utf8");
+      const { data, content } = parseMarkdown(raw);
+      sources.push({
+        id: `training/${file}`,
+        title: data.title || `Training: ${file.replace(".md", "")}`,
+        slug: "/admin-training/",
+        text: content,
+      });
+    }
   }
 
   return sources;

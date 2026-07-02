@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
+import {
+  getElevenLabsProfile,
+  parseJudeVoiceMode,
+} from "@/lib/voice-profiles";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId =
-    process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
 
   if (!apiKey) {
     return NextResponse.json(
@@ -16,13 +18,18 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const text = typeof body.text === "string" ? body.text.trim() : "";
+  const mode = parseJudeVoiceMode(
+    typeof body.mode === "string" ? body.mode : request.headers.get("x-jude-mode")
+  );
 
   if (!text) {
     return NextResponse.json({ error: "text is required" }, { status: 400 });
   }
 
+  const profile = getElevenLabsProfile(mode);
+
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${profile.voiceId}/stream`,
     {
       method: "POST",
       headers: {
@@ -32,13 +39,8 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         text,
-        model_id: "eleven_turbo_v2_5",
-        voice_settings: {
-          stability: 0.45,
-          similarity_boost: 0.8,
-          style: 0.35,
-          use_speaker_boost: true,
-        },
+        model_id: profile.modelId,
+        voice_settings: profile.voiceSettings,
       }),
     }
   );
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
     headers: {
       "Content-Type": "audio/mpeg",
       "Cache-Control": "no-store",
+      "X-Jude-Voice-Mode": mode,
     },
   });
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRealtimeSessionConfig } from "@/lib/realtime-session";
+import { parseJudeVoiceMode } from "@/lib/voice-profiles";
 
 export const runtime = "nodejs";
 
@@ -17,9 +18,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "SDP offer is required." }, { status: 400 });
   }
 
+  const mode = parseJudeVoiceMode(request.headers.get("x-jude-mode"));
+
   const form = new FormData();
   form.set("sdp", sdp);
-  form.set("session", JSON.stringify(getRealtimeSessionConfig()));
+  form.set("session", JSON.stringify(getRealtimeSessionConfig(mode)));
 
   const response = await fetch("https://api.openai.com/v1/realtime/calls", {
     method: "POST",
