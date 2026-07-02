@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@jude/store": "*",
     "gray-matter": "^4.0.3",
     "next": "^15.1.0",
     "openai": "^6.45.0",

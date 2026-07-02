@@ -2,7 +2,8 @@
   "name": "jude",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "lib/jude-store"
   ],
   "scripts": {
     "dev:demo": "npm run dev --workspace=@jude/demo",

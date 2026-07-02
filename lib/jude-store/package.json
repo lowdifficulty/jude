@@ -1,0 +1,17 @@
+{
+  "name": "@jude/store",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./profiles": "./profiles.ts",
+    "./training": "./training.ts",
+    "./sessions": "./sessions.ts",
+    "./users": "./users.ts",
+    "./types": "./types.ts",
+    "./crypto": "./crypto.ts",
+    "./paths": "./paths.ts"
+  }
+}
