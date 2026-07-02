@@ -1,26 +1,24 @@
 import { hashPassword, verifyPassword } from "./crypto";
-import { readStoreJson, writeStoreJson } from "./storage";
+import { assertPersistentStorage, readStoreJson, writeStoreJson } from "./storage";
 import type { StoredUser } from "./types";
 
-type UsersFile = { users: StoredUser[] };
-
-async function readUsersFile(): Promise<UsersFile> {
-  return readStoreJson<UsersFile>("users.json", { users: [] });
+function userPath(userId: string) {
+  return `users/by-id/${userId}.json`;
 }
 
-async function writeUsersFile(data: UsersFile) {
-  await writeStoreJson("users.json", data);
+function usernamePath(username: string) {
+  return `users/by-name/${username}.json`;
 }
 
 export async function findUserByUsername(username: string) {
   const normalized = username.trim().toLowerCase();
-  const file = await readUsersFile();
-  return file.users.find((u) => u.username === normalized) || null;
+  const ref = await readStoreJson<{ userId?: string } | null>(usernamePath(normalized), null);
+  if (!ref?.userId) return null;
+  return findUserById(ref.userId);
 }
 
 export async function findUserById(id: string) {
-  const file = await readUsersFile();
-  return file.users.find((u) => u.id === id) || null;
+  return readStoreJson<StoredUser | null>(userPath(id), null);
 }
 
 export async function createUser(input: {
@@ -28,6 +26,8 @@ export async function createUser(input: {
   password: string;
   displayName?: string;
 }) {
+  assertPersistentStorage();
+
   const username = input.username.trim().toLowerCase();
   if (!username || username.length < 2) {
     throw new Error("Username must be at least 2 characters.");
@@ -49,9 +49,8 @@ export async function createUser(input: {
     createdAt: new Date().toISOString(),
   };
 
-  const file = await readUsersFile();
-  file.users.push(user);
-  await writeUsersFile(file);
+  await writeStoreJson(userPath(user.id), user);
+  await writeStoreJson(usernamePath(username), { userId: user.id });
   return user;
 }
 

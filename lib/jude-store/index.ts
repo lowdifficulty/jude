@@ -8,4 +8,10 @@ export * from "./sessions";
 export * from "./sso";
 export * from "./integrations";
 export * from "./google-oauth";
-export * from "./storage";
+export {
+  assertPersistentStorage,
+  hasPersistentStorage,
+  readStoreJson,
+  writeStoreJson,
+  deleteStoreJson,
+} from "./storage";

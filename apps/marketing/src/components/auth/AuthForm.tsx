@@ -1,65 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useActionState } from "react";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
+import { loginAction, registerAction, type AuthActionState } from "@/app/auth-actions";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
-  const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      if (mode === "register") {
-        const response = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password, displayName }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setError(data.error || "Registration failed.");
-          return;
-        }
-        router.push(data.redirectUrl || "/onboarding");
-        return;
-      }
-
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || "Login failed.");
-        return;
-      }
-
-      if (data.role === "admin") {
-        sessionStorage.setItem(
-          "jude_admin_bridge",
-          JSON.stringify({ username, password, ts: Date.now() })
-        );
-        window.location.href = data.redirectUrl;
-        return;
-      }
-
-      router.push(data.redirectUrl || "/my-jude");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") || (mode === "register" ? "/onboarding" : "/my-jude");
+  const action = mode === "register" ? registerAction : loginAction;
+  const [state, formAction, pending] = useActionState<AuthActionState | null, FormData>(
+    action,
+    null
+  );
 
   return (
     <div className="landing onboarding">
@@ -74,39 +29,34 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               : "Register to get a savable Jude with your own preferences and connected devices."}
           </p>
 
-          <form className="register-form auth-form" onSubmit={handleSubmit}>
+          <form className="register-form auth-form" action={formAction}>
+            <input type="hidden" name="next" value={nextPath} />
             {mode === "register" && (
               <label>
                 Display name
                 <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  name="displayName"
                   placeholder="Mom, Dad, The Smiths…"
+                  autoComplete="name"
                 />
               </label>
             )}
             <label>
               Username
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                required
-              />
+              <input name="username" autoComplete="username" required />
             </label>
             <label>
               Password
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 required
               />
             </label>
-            {error && <p className="auth-error">{error}</p>}
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+            {state?.error && <p className="auth-error">{state.error}</p>}
+            <button type="submit" className="btn-primary" disabled={pending}>
+              {pending ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
             </button>
           </form>
 
