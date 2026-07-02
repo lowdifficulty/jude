@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useJudeVoice } from "@/hooks/useJudeVoice";
 
 function formatTime(date: Date) {
@@ -59,16 +59,7 @@ const statusItems = [
 
 export function JudeInterface() {
   const [time, setTime] = useState<string>("");
-  const [caption, setCaption] = useState<string>("");
-  const lastOrbTapRef = useRef(0);
-  const { state, error, isActive, start, stop, interrupt } = useJudeVoice({
-    onTranscript: (text, role) => {
-      if (role === "assistant") setCaption(text);
-    },
-    onStateChange: (next) => {
-      if (next === "idle") setCaption("");
-    },
-  });
+  const { state, toggle } = useJudeVoice();
 
   useEffect(() => {
     const update = () => setTime(formatTime(new Date()));
@@ -77,36 +68,21 @@ export function JudeInterface() {
     return () => clearInterval(interval);
   }, []);
 
-  const voiceHint =
+  const orbClass =
     state === "connecting"
-      ? "Connecting…"
-      : state === "listening"
-        ? "Listening…"
-        : state === "thinking"
-          ? "Thinking…"
-          : state === "speaking"
-            ? "Speaking… tap orb to interrupt"
-            : "Tap to talk to Jude";
+      ? "jude-orb jude-orb--connecting"
+      : state === "listening" || state === "thinking"
+        ? "jude-orb jude-orb--live"
+        : state === "speaking"
+          ? "jude-orb jude-orb--speaking"
+          : state === "error"
+            ? "jude-orb jude-orb--error"
+            : "jude-orb";
 
-  const activateOrb = () => {
-    const now = Date.now();
-    if (now - lastOrbTapRef.current < 350) return;
-    lastOrbTapRef.current = now;
-
-    if (state === "error" || !isActive) {
-      start();
-      return;
-    }
-
-    if (state === "speaking") {
-      interrupt();
-    }
-  };
-
-  const handleOrbPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    activateOrb();
-  };
+  const ariaLabel =
+    state === "idle" || state === "error"
+      ? "Tap to talk to Jude"
+      : "Tap to stop talking to Jude";
 
   return (
     <div className="jude-shell">
@@ -131,23 +107,11 @@ export function JudeInterface() {
       <div className="jude-main">
         <button
           type="button"
-          className={`jude-orb${state === "listening" || state === "speaking" ? " jude-orb--active" : ""}`}
-          aria-label={voiceHint}
-          onPointerUp={handleOrbPointerUp}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              activateOrb();
-            }
-          }}
+          className={orbClass}
+          aria-label={ariaLabel}
+          aria-pressed={state !== "idle" && state !== "error"}
+          onClick={toggle}
         />
-        <p className="jude-hint">{error || voiceHint}</p>
-        {isActive && (
-          <button type="button" className="jude-end-btn" onClick={stop}>
-            End conversation
-          </button>
-        )}
-        {caption && !error && <p className="jude-caption">{caption}</p>}
       </div>
 
       <footer className="jude-status">

@@ -1,16 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { createSiteMetadata } from "@/lib/site-metadata";
 
-export const metadata: Metadata = {
-  title: "Jude — Home AI that feels like family",
-  description:
-    "Meet Jude. A wall-mounted home AI that helps with everything around the house. Like Jarvis, but your grandmother can use him.",
-  openGraph: {
-    title: "Jude — Your home. Your friend.",
-    description: "A home AI that's a member of the family.",
-    siteName: "Jude",
-  },
-};
+export const metadata: Metadata = createSiteMetadata();
 
 export const viewport: Viewport = {
   width: "device-width",

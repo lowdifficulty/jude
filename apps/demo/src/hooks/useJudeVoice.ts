@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export type JudeVoiceState =
   | "idle"
@@ -9,11 +9,6 @@ export type JudeVoiceState =
   | "thinking"
   | "speaking"
   | "error";
-
-type UseJudeVoiceOptions = {
-  onTranscript?: (text: string, role: "user" | "assistant") => void;
-  onStateChange?: (state: JudeVoiceState) => void;
-};
 
 function waitForIceGathering(pc: RTCPeerConnection) {
   if (pc.iceGatheringState === "complete") return Promise.resolve();
@@ -25,7 +20,7 @@ function waitForIceGathering(pc: RTCPeerConnection) {
       }
     };
     pc.addEventListener("icegatheringstatechange", check);
-    setTimeout(resolve, 2500);
+    setTimeout(resolve, 2000);
   });
 }
 
@@ -69,24 +64,17 @@ function unlockAudioPlayback() {
   audio.play().catch(() => {});
 }
 
-export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
+export function useJudeVoice() {
   const [state, setState] = useState<JudeVoiceState>("idle");
-  const [error, setError] = useState<string | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackDoneRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(false);
-  const optionsRef = useRef(options);
-
-  useEffect(() => {
-    optionsRef.current = options;
-  }, [options]);
 
   const updateState = useCallback((next: JudeVoiceState) => {
     setState(next);
-    optionsRef.current.onStateChange?.(next);
   }, []);
 
   const teardown = useCallback(() => {
@@ -110,7 +98,6 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
 
   const stop = useCallback(() => {
     teardown();
-    setError(null);
     updateState("idle");
   }, [teardown, updateState]);
 
@@ -123,8 +110,8 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
         body: JSON.stringify({ text }),
       });
 
-      if (!response.ok) {
-        return false;
+      if (!response.ok || !activeRef.current) {
+        return;
       }
 
       const blob = await response.blob();
@@ -156,12 +143,10 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
           });
         });
       } catch {
-        return false;
+        // Keep the session alive even if mobile blocks autoplay.
       } finally {
         URL.revokeObjectURL(url);
       }
-
-      return true;
     },
     [updateState]
   );
@@ -169,7 +154,7 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
   const handleFunctionCall = useCallback(
     async (name: string, argsJson: string, callId: string) => {
       const dc = dcRef.current;
-      if (!dc) return;
+      if (!dc || !activeRef.current) return;
 
       if (name !== "search_jude_knowledge") {
         dc.send(
@@ -201,6 +186,8 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
       });
       const data = await rag.json();
 
+      if (!activeRef.current) return;
+
       dc.send(
         JSON.stringify({
           type: "conversation.item.create",
@@ -216,29 +203,18 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
     []
   );
 
-  const interrupt = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    playbackDoneRef.current?.();
-    playbackDoneRef.current = null;
-
-    if (activeRef.current) {
-      updateState("listening");
-    }
-  }, [updateState]);
-
-  const start = useCallback(async () => {
+  const connect = useCallback(async () => {
     if (activeRef.current) return;
 
     unlockAudioPlayback();
-    setError(null);
-    updateState("connecting");
     activeRef.current = true;
+    updateState("connecting");
 
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Microphone is not available in this browser.");
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -246,6 +222,7 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
           autoGainControl: true,
         },
       });
+
       if (!activeRef.current) {
         stream.getTracks().forEach((track) => track.stop());
         return;
@@ -254,7 +231,10 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
       micStreamRef.current = stream;
 
       const pc = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
       });
       pcRef.current = pc;
 
@@ -268,13 +248,12 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
       };
 
       dc.onclose = () => {
-        if (activeRef.current) {
-          teardown();
-          updateState("idle");
-        }
+        if (activeRef.current) stop();
       };
 
       dc.onmessage = async (event) => {
+        if (!activeRef.current) return;
+
         const message = JSON.parse(event.data) as Record<string, unknown>;
 
         if (
@@ -284,11 +263,7 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
         ) {
           const text = extractAssistantText(message);
           if (text) {
-            optionsRef.current.onTranscript?.(text, "assistant");
-            const spoke = await playElevenLabs(text);
-            if (!spoke && activeRef.current) {
-              setError("Voice playback unavailable — read Jude's reply above.");
-            }
+            await playElevenLabs(text);
             if (activeRef.current) updateState("listening");
           }
         }
@@ -302,25 +277,17 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
           );
         }
 
-        if (
-          message.type === "conversation.item.input_audio_transcription.completed" ||
-          message.type === "conversation.item.input_audio_transcription.done"
-        ) {
-          const transcript = String(message.transcript || "").trim();
-          if (transcript) optionsRef.current.onTranscript?.(transcript, "user");
-        }
-
         if (message.type === "error") {
-          const err = message.error as { message?: string } | undefined;
-          setError(err?.message || "Voice session error");
-          updateState("error");
           teardown();
+          updateState("error");
         }
       };
 
-      const offer = await pc.createOffer();
+      const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
       await waitForIceGathering(pc);
+
+      if (!activeRef.current) return;
 
       const sdpResponse = await fetch("/api/voice/connect", {
         method: "POST",
@@ -335,20 +302,24 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
 
       const answerSdp = await sdpResponse.text();
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-    } catch (err) {
+    } catch {
       teardown();
-      const message = err instanceof Error ? err.message : "Voice failed to start";
-      setError(message);
       updateState("error");
     }
-  }, [handleFunctionCall, playElevenLabs, teardown, updateState]);
+  }, [handleFunctionCall, playElevenLabs, stop, teardown, updateState]);
+
+  const toggle = useCallback(() => {
+    if (activeRef.current || state === "connecting") {
+      stop();
+      return;
+    }
+
+    void connect();
+  }, [connect, state, stop]);
 
   return {
     state,
-    error,
-    isActive: state !== "idle" && state !== "error",
-    start,
+    toggle,
     stop,
-    interrupt,
   };
 }

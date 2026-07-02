@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BenefitPage } from "@/components/site/BenefitPage";
 import { getAllPages, getPageBySlug } from "@/lib/content";
+import { createPageMetadata } from "@/lib/site-metadata";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -14,14 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = getPageBySlug(slug);
   if (!page) return {};
 
-  return {
-    title: page.metaTitle,
-    description: page.metaDescription,
-    openGraph: {
-      title: page.metaTitle,
-      description: page.metaDescription,
-    },
-  };
+  return createPageMetadata(page);
 }
 
 export default async function Page({ params }: Props) {

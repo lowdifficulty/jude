@@ -1,16 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { createSiteMetadata } from "@/lib/site-metadata";
 
-export const metadata: Metadata = {
-  title: "Jude — Your home. Your friend.",
-  description:
-    "A wall-mounted home AI that helps with everything around the house. Connected to your friends, family, email, calendar, and more.",
-  openGraph: {
-    title: "Jude",
-    description: "Your home. Your friend.",
-    siteName: "Jude",
-  },
-};
+export const metadata: Metadata = createSiteMetadata();
 
 export const viewport: Viewport = {
   themeColor: "#1a1510",
