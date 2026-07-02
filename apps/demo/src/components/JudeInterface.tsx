@@ -1,17 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { JudeExplosionFX, JudeMatrixRain, JudeRestoreFX } from "@/components/JudeExplosionFX";
 import { JudeFooterDock } from "@/components/JudeFooterDock";
 import { JudeGames, type GameId } from "@/components/JudeGames";
 import { JudeMarketplace } from "@/components/JudeMarketplace";
 import { JudeOrb } from "@/components/JudeOrb";
+import { useHeyJudeWake } from "@/hooks/useHeyJudeWake";
+import { useJudeAccount } from "@/hooks/useJudeAccount";
 import { useJudeVoice } from "@/hooks/useJudeVoice";
-import {
-  loadConnectedApps,
-  saveConnectedApps,
-  type MarketplaceAppId,
-} from "@/lib/marketplace-apps";
+import { MARKETPLACE_APPS, type MarketplaceAppId } from "@/lib/marketplace-apps";
 
 type JudeMode = "good" | "evil";
 type BlastPhase = "idle" | "out" | "in";
@@ -24,7 +23,16 @@ function formatTime(date: Date) {
   });
 }
 
+function normalizeConnectedIds(ids: string[]): MarketplaceAppId[] {
+  return ids.filter((id): id is MarketplaceAppId =>
+    MARKETPLACE_APPS.some((app) => app.id === id)
+  );
+}
+
 export function JudeInterface() {
+  const searchParams = useSearchParams();
+  const { user, profile, loading, saveConnectedApps, saveAppSettings, logout, refresh } =
+    useJudeAccount();
   const [time, setTime] = useState<string>("");
   const [mode, setMode] = useState<JudeMode>("good");
   const [connectedApps, setConnectedApps] = useState<MarketplaceAppId[]>([]);
@@ -35,7 +43,17 @@ export function JudeInterface() {
   const [evilBlackhole, setEvilBlackhole] = useState(false);
   const blastTimersRef = useRef<number[]>([]);
   const evilBlastCountRef = useRef(0);
-  const { state, toggle } = useJudeVoice(mode);
+  const profileLoadedRef = useRef(false);
+  const { state, connect, toggle, errorMessage } = useJudeVoice(
+    mode,
+    Boolean(profile?.integrations.gmail)
+  );
+
+  useHeyJudeWake({
+    enabled: Boolean(user) && blastPhase === "idle" && !gamesOpen && !marketplaceOpen,
+    voiceState: state,
+    onWake: connect,
+  });
 
   const clearBlastTimers = useCallback(() => {
     blastTimersRef.current.forEach((id) => window.clearTimeout(id));
@@ -76,30 +94,63 @@ export function JudeInterface() {
   }, []);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("jude-mode");
-    if (saved === "good" || saved === "regular" || saved === "evil") {
-      setMode(saved === "regular" ? "good" : saved);
+    if (!profile || profileLoadedRef.current) return;
+    profileLoadedRef.current = true;
+
+    const savedMode = profile.appSettings.mode;
+    if (savedMode === "good" || savedMode === "evil") {
+      setMode(savedMode);
     }
-    setConnectedApps(loadConnectedApps());
-  }, []);
 
-  const handleConnectionsChange = useCallback((ids: MarketplaceAppId[]) => {
-    setConnectedApps(ids);
-  }, []);
-
-  const handleFooterReorder = useCallback((ids: MarketplaceAppId[]) => {
-    setConnectedApps(ids);
-    saveConnectedApps(ids);
-  }, []);
+    const dockOrder = profile.appSettings.dockOrder;
+    const ids = normalizeConnectedIds(profile.connectedAppIds);
+    if (dockOrder?.length) {
+      const ordered = dockOrder.filter((id): id is MarketplaceAppId =>
+        ids.includes(id as MarketplaceAppId)
+      );
+      const rest = ids.filter((id) => !ordered.includes(id));
+      setConnectedApps([...ordered, ...rest]);
+    } else {
+      setConnectedApps(ids);
+    }
+  }, [profile]);
 
   useEffect(() => {
-    window.localStorage.setItem("jude-mode", mode);
+    if (searchParams.get("marketplace") === "1") {
+      setMarketplaceOpen(true);
+    }
+    if (searchParams.get("gmail") === "connected") {
+      void refresh();
+    }
+  }, [refresh, searchParams]);
+
+  const handleConnectionsChange = useCallback(
+    (ids: MarketplaceAppId[]) => {
+      setConnectedApps(ids);
+      void saveConnectedApps(ids);
+    },
+    [saveConnectedApps]
+  );
+
+  const handleFooterReorder = useCallback(
+    (ids: MarketplaceAppId[]) => {
+      setConnectedApps(ids);
+      void saveConnectedApps(ids);
+      void saveAppSettings({ dockOrder: ids });
+    },
+    [saveAppSettings, saveConnectedApps]
+  );
+
+  useEffect(() => {
     document.body.dataset.judeMode = mode;
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) {
       themeMeta.setAttribute("content", mode === "evil" ? "#0a0000" : "#1a1510");
     }
-  }, [mode]);
+    if (profileLoadedRef.current) {
+      void saveAppSettings({ mode });
+    }
+  }, [mode, saveAppSettings]);
 
   const isEvil = mode === "evil";
 
@@ -123,6 +174,10 @@ export function JudeInterface() {
     setActiveGame("menu");
   };
 
+  if (loading) {
+    return <div className="jude-auth jude-auth--loading">Loading your Jude…</div>;
+  }
+
   return (
     <div
       className={`jude-shell${isEvil ? " jude-shell--evil" : ""}${blastPhase === "out" ? " jude-shell--blast-out" : ""}${blastPhase === "in" ? " jude-shell--blast-in" : ""}${evilBlackhole && blastPhase !== "idle" ? " jude-shell--blackhole" : ""}`}
@@ -133,9 +188,7 @@ export function JudeInterface() {
         </div>
       )}
 
-      {blastPhase === "out" && (
-        <JudeExplosionFX mode={mode} blackhole={evilBlackhole} />
-      )}
+      {blastPhase === "out" && <JudeExplosionFX mode={mode} blackhole={evilBlackhole} />}
       {blastPhase === "in" && mode !== "evil" && <JudeRestoreFX mode={mode} />}
 
       {isEvil && <div className="jude-evil-vignette" aria-hidden="true" />}
@@ -154,12 +207,16 @@ export function JudeInterface() {
         </div>
 
         <div className="jude-header-meta">
+          {user && (
+            <div className="jude-account-chip">
+              <span>{user.displayName}</span>
+              <button type="button" onClick={() => void logout()}>
+                Sign out
+              </button>
+            </div>
+          )}
           <span className="jude-clock">{time}</span>
-          <div
-            className="jude-mode-toggle"
-            role="group"
-            aria-label="Appearance mode"
-          >
+          <div className="jude-mode-toggle" role="group" aria-label="Appearance mode">
             <button
               type="button"
               className={`jude-mode-toggle__btn${mode === "good" ? " jude-mode-toggle__btn--active" : ""}`}
@@ -182,6 +239,32 @@ export function JudeInterface() {
 
       <div className="jude-main">
         <JudeOrb mode={mode} state={state} onToggle={toggle} onExplosion={handleExplosion} />
+        {state === "idle" && (
+          <p className="jude-voice-hint">
+            {isEvil ? 'Say "Hey Jude" to summon' : 'Say "Hey Jude" to wake me up'}
+          </p>
+        )}
+        {state === "connecting" && (
+          <p className="jude-voice-hint jude-voice-hint--active">Connecting…</p>
+        )}
+        {state === "listening" && (
+          <p className="jude-voice-hint jude-voice-hint--active">
+            {isEvil ? "Listening, mortal…" : "I'm listening, honey."}
+          </p>
+        )}
+        {state === "speaking" && (
+          <p className="jude-voice-hint jude-voice-hint--active">
+            {isEvil ? "JUDE speaks…" : "Jude is speaking…"}
+          </p>
+        )}
+        {state === "error" && errorMessage && (
+          <p className="jude-voice-error">
+            {errorMessage}{" "}
+            <button type="button" onClick={() => void connect()}>
+              Try again
+            </button>
+          </p>
+        )}
       </div>
 
       <JudeFooterDock
@@ -197,6 +280,8 @@ export function JudeInterface() {
         open={marketplaceOpen && blastPhase === "idle"}
         onClose={closeMarketplace}
         onConnectionsChange={handleConnectionsChange}
+        profile={profile}
+        onRefreshProfile={refresh}
       />
 
       <JudeGames

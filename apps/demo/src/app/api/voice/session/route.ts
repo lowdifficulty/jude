@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser, hasGmailTokens } from "@jude/store";
 import { getRealtimeSessionConfig } from "@/lib/realtime-session";
 
 export const runtime = "nodejs";
 
 export async function POST() {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -19,7 +25,9 @@ export async function POST() {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      session: getRealtimeSessionConfig(),
+      session: getRealtimeSessionConfig("good", {
+        gmailConnected: hasGmailTokens(user.id),
+      }),
     }),
   });
 

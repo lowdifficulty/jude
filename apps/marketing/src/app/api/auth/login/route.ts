@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   USER_COOKIE,
   buildUserCookieValue,
+  createSsoToken,
   verifyAdminCredentials,
   verifyUserCredentials,
 } from "@jude/store";
@@ -25,9 +26,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
   }
 
+  const ssoToken = createSsoToken(user.id);
+  const demoSsoUrl = `${JUDE_DEMO_URL}/api/auth/sso?token=${encodeURIComponent(ssoToken)}`;
+
   const response = NextResponse.json({
     role: "user",
     redirectUrl: "/my-jude",
+    demoSsoUrl,
     user: { id: user.id, username: user.username, displayName: user.displayName },
   });
   response.cookies.set(USER_COOKIE, buildUserCookieValue(user.id), {

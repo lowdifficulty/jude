@@ -2,14 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { JudeAppIcon } from "@/components/JudeAppIcon";
+import type { JudeAccountProfile } from "@/hooks/useJudeAccount";
 import {
   getAppsByCategory,
-  loadConnectedApps,
-  loadWeatherZip,
+  isOAuthApp,
   MARKETPLACE_APPS,
   MARKETPLACE_CATEGORIES,
-  saveConnectedApps,
-  saveWeatherZip,
   type MarketplaceApp,
   type MarketplaceAppId,
 } from "@/lib/marketplace-apps";
@@ -22,6 +20,8 @@ type JudeMarketplaceProps = {
   open: boolean;
   onClose: () => void;
   onConnectionsChange?: (ids: MarketplaceAppId[]) => void;
+  profile: JudeAccountProfile | null;
+  onRefreshProfile?: () => Promise<JudeAccountProfile | null | undefined>;
 };
 
 function isValidZip(zip: string) {
@@ -34,24 +34,37 @@ function tierLabel(tier: 1 | 2 | 3, isEvil: boolean) {
   return isEvil ? "Optional" : "Tier 3";
 }
 
-export function JudeMarketplace({ mode, open, onClose, onConnectionsChange }: JudeMarketplaceProps) {
+export function JudeMarketplace({
+  mode,
+  open,
+  onClose,
+  onConnectionsChange,
+  profile,
+  onRefreshProfile,
+}: JudeMarketplaceProps) {
   const isEvil = mode === "evil";
   const [connected, setConnected] = useState<MarketplaceAppId[]>([]);
   const [selected, setSelected] = useState<MarketplaceAppId | null>(null);
   const [view, setView] = useState<MarketplaceView>("launch");
   const [zipInput, setZipInput] = useState("");
   const [zipError, setZipError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const launchApps = useMemo(() => MARKETPLACE_APPS.filter((app) => app.launch25), []);
 
   useEffect(() => {
     if (!open) return;
-    setConnected(loadConnectedApps());
-    setZipInput(loadWeatherZip());
+    const ids = (profile?.connectedAppIds || []).filter((id): id is MarketplaceAppId =>
+      MARKETPLACE_APPS.some((app) => app.id === id)
+    );
+    setConnected(ids);
+    setZipInput(profile?.appSettings.weatherZip || "");
     setSelected(null);
     setView("launch");
     setZipError("");
-  }, [open]);
+    setStatusMessage("");
+  }, [open, profile]);
 
   useEffect(() => {
     if (!open) return;
@@ -69,15 +82,44 @@ export function JudeMarketplace({ mode, open, onClose, onConnectionsChange }: Ju
     ? MARKETPLACE_APPS.find((app) => app.id === selected) ?? null
     : null;
 
+  const persistConnected = useCallback(
+    async (next: MarketplaceAppId[]) => {
+      setConnected(next);
+      onConnectionsChange?.(next);
+    },
+    [onConnectionsChange]
+  );
+
   const toggleConnection = useCallback(
-    (app: MarketplaceApp) => {
+    async (app: MarketplaceApp) => {
       const isConnected = connected.includes(app.id);
+
+      if (isConnected && app.id === "gmail") {
+        setBusy(true);
+        setStatusMessage("");
+        try {
+          const response = await fetch("/api/integrations/gmail/disconnect", { method: "POST" });
+          if (!response.ok) {
+            setStatusMessage("Could not disconnect Gmail.");
+            return;
+          }
+          const next = connected.filter((id) => id !== app.id);
+          await persistConnected(next);
+          await onRefreshProfile?.();
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
 
       if (isConnected) {
         const next = connected.filter((id) => id !== app.id);
-        setConnected(next);
-        saveConnectedApps(next);
-        onConnectionsChange?.(next);
+        await persistConnected(next);
+        return;
+      }
+
+      if (isOAuthApp(app.id)) {
+        window.location.href = `/api/integrations/gmail/connect`;
         return;
       }
 
@@ -86,16 +128,21 @@ export function JudeMarketplace({ mode, open, onClose, onConnectionsChange }: Ju
           setZipError("Enter a valid 5-digit US zip code.");
           return;
         }
-        saveWeatherZip(zipInput.trim());
+        await fetch("/api/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "appSettings",
+            weatherZip: zipInput.trim(),
+          }),
+        });
         setZipError("");
       }
 
       const next = [...connected, app.id];
-      setConnected(next);
-      saveConnectedApps(next);
-      onConnectionsChange?.(next);
+      await persistConnected(next);
     },
-    [connected, onConnectionsChange, zipInput]
+    [connected, onRefreshProfile, persistConnected, zipInput]
   );
 
   if (!open) return null;
@@ -250,6 +297,14 @@ export function JudeMarketplace({ mode, open, onClose, onConnectionsChange }: Ju
 
             <p className="jude-marketplace-detail__body">{copy(selectedApp).detail}</p>
 
+            {selectedApp.id === "gmail" && profile?.integrations.gmail?.email && (
+              <p className="jude-marketplace-detail__account">
+                {isEvil ? "Linked account" : "Signed in as"} {profile.integrations.gmail.email}
+              </p>
+            )}
+
+            {statusMessage && <p className="jude-marketplace-detail__status">{statusMessage}</p>}
+
             {selectedApp.needsZip && (
               <label className="jude-marketplace-detail__zip">
                 <span>{isEvil ? "Coordinates (zip)" : "Your zip code"}</span>
@@ -284,15 +339,20 @@ export function JudeMarketplace({ mode, open, onClose, onConnectionsChange }: Ju
                   ? " jude-marketplace-detail__connect--on"
                   : ""
               }`}
-              onClick={() => toggleConnection(selectedApp)}
+              disabled={busy}
+              onClick={() => void toggleConnection(selectedApp)}
             >
               {connected.includes(selectedApp.id)
                 ? isEvil
                   ? "Sever link"
                   : "Disconnect"
-                : isEvil
-                  ? "Assimilate"
-                  : "Connect"}
+                : isOAuthApp(selectedApp.id)
+                  ? isEvil
+                    ? "Sign in with Google"
+                    : "Sign in with Google"
+                  : isEvil
+                    ? "Assimilate"
+                    : "Connect"}
             </button>
           </div>
         )}

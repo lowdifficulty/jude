@@ -5,6 +5,7 @@ import {
   addPersonalTraining,
   getOrCreateProfile,
   saveUserProfile,
+  sanitizeProfileForClient,
   updateOnboarding,
 } from "@jude/store/profiles";
 
@@ -13,7 +14,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  return NextResponse.json({ profile: getOrCreateProfile(user) });
+  return NextResponse.json({ profile: sanitizeProfileForClient(getOrCreateProfile(user)) });
 }
 
 export async function POST(request: Request) {
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     const onboardingGroups = (body.onboardingGroups || []) as OnboardingGroup[];
     const connectedDeviceIds = (body.connectedDeviceIds || []) as string[];
     const profile = updateOnboarding(user, { onboardingGroups, connectedDeviceIds });
-    return NextResponse.json({ ok: true, profile });
+    return NextResponse.json({ ok: true, profile: sanitizeProfileForClient(profile) });
   }
 
   if (action === "training") {
@@ -40,7 +41,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Title and text are required." }, { status: 400 });
     }
     addPersonalTraining(user, { title, category, text });
-    return NextResponse.json({ ok: true, profile: getOrCreateProfile(user) });
+    return NextResponse.json({
+      ok: true,
+      profile: sanitizeProfileForClient(getOrCreateProfile(user)),
+    });
   }
 
   if (action === "notes") {
@@ -48,7 +52,7 @@ export async function POST(request: Request) {
     profile.preferences.notes = String(body.notes || "");
     profile.updatedAt = new Date().toISOString();
     saveUserProfile(profile);
-    return NextResponse.json({ ok: true, profile });
+    return NextResponse.json({ ok: true, profile: sanitizeProfileForClient(profile) });
   }
 
   return NextResponse.json({ error: "Unknown action." }, { status: 400 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, isAdminAuthenticated } from "@jude/store";
-import { getOrCreateProfile } from "@jude/store/profiles";
+import { getOrCreateProfile, sanitizeProfileForClient } from "@jude/store/profiles";
 
 export async function GET() {
   if (await isAdminAuthenticated()) {
@@ -20,6 +20,6 @@ export async function GET() {
       username: user.username,
       displayName: user.displayName,
     },
-    profile: getOrCreateProfile(user),
+    profile: sanitizeProfileForClient(getOrCreateProfile(user)),
   });
 }

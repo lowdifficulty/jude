@@ -13,7 +13,9 @@ export const PROFILES_DIR = path.join(DATA_DIR, "profiles");
 export const USERS_FILE = path.join(DATA_DIR, "users.json");
 export const ADMIN_OVERRIDES_FILE = path.join(DATA_DIR, "admin-overrides.json");
 export const TRAINING_HISTORY_FILE = path.join(DATA_DIR, "training-history.json");
+export const INTEGRATIONS_DIR = path.join(DATA_DIR, "integrations");
 
 export function ensureDataDirs() {
   fs.mkdirSync(PROFILES_DIR, { recursive: true });
+  fs.mkdirSync(INTEGRATIONS_DIR, { recursive: true });
 }

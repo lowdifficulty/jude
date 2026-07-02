@@ -22,16 +22,18 @@ export default function MyJudePage() {
   const [trainTitle, setTrainTitle] = useState("");
   const [trainText, setTrainText] = useState("");
   const [message, setMessage] = useState("");
+  const [demoSsoUrl, setDemoSsoUrl] = useState("");
 
   const load = useCallback(async () => {
     const response = await fetch("/api/auth/session");
-    if (!response.ok) {
+    const data = await response.json();
+    if (!response.ok || !data.authenticated) {
       window.location.href = "/login";
       return;
     }
-    const data = await response.json();
     setDisplayName(data.user.displayName);
     setProfile(data.profile);
+    setDemoSsoUrl(data.demoSsoUrl || "");
     setNotes(data.profile.preferences?.notes || "");
     setLoading(false);
   }, []);
@@ -173,8 +175,8 @@ export default function MyJudePage() {
             <Link href="/onboarding" className="btn-secondary">
               Update onboarding
             </Link>
-            <a href={JUDE_DEMO_URL} className="btn-primary" target="_blank" rel="noopener noreferrer">
-              Open wall demo
+            <a href={demoSsoUrl || JUDE_DEMO_URL} className="btn-primary">
+              Open your Jude wall
             </a>
             <button type="button" className="btn-secondary" onClick={logout}>
               Sign out

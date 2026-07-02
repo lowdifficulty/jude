@@ -55,10 +55,10 @@ export function JudeOrb({ mode, state, onToggle, onExplosion }: JudeOrbProps) {
   const ariaLabel =
     state === "idle" || state === "error"
       ? isEvil
-        ? "Summon Jude"
-        : "Tap to talk to Jude"
+        ? 'Say "Hey Jude" or tap to summon'
+        : 'Say "Hey Jude" or tap to talk'
       : isEvil
-        ? "Banish Jude"
+        ? "Tap to banish Jude"
         : "Tap to stop talking to Jude";
 
   return (

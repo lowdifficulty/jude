@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@jude/store";
 import {
   formatKnowledgeContext,
   searchKnowledge,
@@ -7,6 +8,11 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => ({}));
   const query = typeof body.query === "string" ? body.query.trim() : "";
 

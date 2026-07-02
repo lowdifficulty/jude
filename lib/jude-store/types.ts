@@ -30,16 +30,48 @@ export type StoredUser = {
   createdAt: string;
 };
 
+export type JudeMode = "good" | "evil";
+
+export type GmailIntegration = {
+  email: string;
+  connectedAt: string;
+};
+
+export type UserIntegrations = {
+  gmail?: GmailIntegration;
+};
+
 export type UserProfile = {
   userId: string;
   username: string;
   displayName: string;
   onboardingGroups: OnboardingGroup[];
   connectedDeviceIds: string[];
+  /** Marketplace apps connected to this account (synced across devices). */
+  connectedAppIds: string[];
+  /** Per-app settings synced with the account. */
+  appSettings: {
+    weatherZip?: string;
+    mode?: JudeMode;
+    dockOrder?: string[];
+  };
+  integrations: UserIntegrations;
   personalTraining: AdminEntry[];
   preferences: {
     quietHours?: string;
     notes?: string;
   };
   updatedAt: string;
+};
+
+export type GmailTokenRecord = {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  email: string;
+  connectedAt: string;
+};
+
+export type UserIntegrationsFile = {
+  gmail?: GmailTokenRecord;
 };

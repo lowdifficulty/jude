@@ -1047,6 +1047,13 @@ export function getAppsByCategory(categoryId: MarketplaceCategoryId) {
 export const CONNECTED_STORAGE_KEY = "jude-marketplace-connected";
 export const WEATHER_ZIP_STORAGE_KEY = "jude-marketplace-weather-zip";
 
+/** Apps that require real OAuth instead of a local toggle. */
+export const OAUTH_APP_IDS = new Set<MarketplaceAppId>(["gmail"]);
+
+export function isOAuthApp(id: MarketplaceAppId) {
+  return OAUTH_APP_IDS.has(id);
+}
+
 export function loadConnectedApps(): MarketplaceAppId[] {
   if (typeof window === "undefined") return [];
   try {

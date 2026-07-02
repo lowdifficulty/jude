@@ -3251,3 +3251,153 @@ body.jude-dock-expanded-open {
   margin: 0.75rem 0 0 1.25rem;
   color: rgba(245, 240, 234, 0.7);
 }
+
+.jude-auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 190, 90, 0.12), transparent 45%),
+    #0f0d0a;
+}
+
+.jude-auth--loading {
+  color: rgba(245, 240, 234, 0.7);
+  font-size: 1.1rem;
+}
+
+.jude-auth__panel {
+  width: min(100%, 420px);
+  padding: 2rem;
+  border-radius: 20px;
+  border: 1px solid rgba(245, 240, 234, 0.12);
+  background: rgba(20, 16, 12, 0.92);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.jude-auth__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: rgba(255, 190, 90, 0.8);
+  margin-bottom: 0.75rem;
+}
+
+.jude-auth__panel h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.jude-auth__lead {
+  color: rgba(245, 240, 234, 0.72);
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.jude-auth__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.jude-auth__form label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  color: rgba(245, 240, 234, 0.85);
+}
+
+.jude-auth__form input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 240, 234, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5f0ea;
+  padding: 0.85rem 1rem;
+}
+
+.jude-auth__submit {
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.2rem;
+  background: linear-gradient(135deg, #ffb84d, #ff8a2a);
+  color: #1a1208;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.jude-auth__submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.jude-auth__error {
+  color: #ff8080;
+}
+
+.jude-auth__switch {
+  margin-top: 1.25rem;
+  color: rgba(245, 240, 234, 0.65);
+}
+
+.jude-auth__switch a {
+  color: #ffb84d;
+}
+
+.jude-account-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.82rem;
+  color: rgba(245, 240, 234, 0.75);
+}
+
+.jude-account-chip button {
+  border: 1px solid rgba(245, 240, 234, 0.18);
+  background: transparent;
+  color: rgba(245, 240, 234, 0.8);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  cursor: pointer;
+}
+
+.jude-marketplace-detail__account,
+.jude-marketplace-detail__status {
+  margin-top: 0.75rem;
+  color: rgba(245, 240, 234, 0.72);
+  font-size: 0.92rem;
+}
+
+.jude-voice-hint {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: rgba(245, 240, 234, 0.55);
+}
+
+.jude-voice-hint--active {
+  color: rgba(255, 190, 90, 0.92);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+.jude-shell--evil .jude-voice-hint--active {
+  color: rgba(255, 80, 80, 0.92);
+}
+
+.jude-voice-error {
+  margin-top: 1rem;
+  text-align: center;
+  color: #ff8080;
+  font-size: 0.92rem;
+}
+
+.jude-voice-error button {
+  border: none;
+  background: transparent;
+  color: #ffb84d;
+  text-decoration: underline;
+  cursor: pointer;
+}

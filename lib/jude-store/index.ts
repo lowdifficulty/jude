@@ -5,3 +5,6 @@ export * from "./users";
 export * from "./profiles";
 export * from "./training";
 export * from "./sessions";
+export * from "./sso";
+export * from "./integrations";
+export * from "./google-oauth";

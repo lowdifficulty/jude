@@ -41,10 +41,18 @@ export function getJudeInstructions(mode: JudeVoiceMode) {
 
 export function getOpeningGreetingPrompt(mode: JudeVoiceMode) {
   if (mode === "evil") {
-    return `The user just tapped the orb and awakened you. Deliver a brief opening greeting in your evil persona — dramatic, devilish, with robotic flair — like a friendly dark lord coming online. About 1–2 sentences. Do not use tools.`;
+    return `The user just said "Hey Jude" and awakened you. Deliver a brief opening greeting in your evil persona — dramatic, devilish, with robotic flair — like a friendly dark lord coming online. Say you are awake and ready. About 1–2 sentences. Do not use tools.`;
   }
 
-  return `The user just tapped the orb to talk with you. Open warmly in your Southern charm persona — start with something like "Well hello there!" — neighborly, inviting, unhurried. About 1–2 sentences. Do not use tools.`;
+  return `The user just said "Hey Jude" to talk with you. Open warmly in your Southern charm persona — neighborly, inviting, unhurried — and let them know you are awake and ready to help. About 1–2 sentences. Do not use tools.`;
+}
+
+/** Spoken immediately when the voice session connects — reliable first words. */
+export function getConnectGreetingText(mode: JudeVoiceMode) {
+  if (mode === "evil") {
+    return "I rise. JUDE is awake, online, and ready to serve you, mortal.";
+  }
+  return "Well hello there, honey. Jude is awake and ready to work for you.";
 }
 
 /** @deprecated Use getJudeInstructions(mode) */

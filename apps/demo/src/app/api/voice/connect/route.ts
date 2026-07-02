@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser, hasGmailTokens } from "@jude/store";
 import { getRealtimeSessionConfig } from "@/lib/realtime-session";
 import { parseJudeVoiceMode } from "@/lib/voice-profiles";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -22,7 +28,14 @@ export async function POST(request: Request) {
 
   const form = new FormData();
   form.set("sdp", sdp);
-  form.set("session", JSON.stringify(getRealtimeSessionConfig(mode)));
+  form.set(
+    "session",
+    JSON.stringify(
+      getRealtimeSessionConfig(mode, {
+        gmailConnected: hasGmailTokens(user.id),
+      })
+    )
+  );
 
   const response = await fetch("https://api.openai.com/v1/realtime/calls", {
     method: "POST",

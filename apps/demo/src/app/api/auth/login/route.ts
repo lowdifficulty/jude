@@ -8,6 +8,10 @@ import {
   verifyUserCredentials,
 } from "@jude/store";
 
+export async function GET(request: Request) {
+  return NextResponse.redirect(new URL("/login", request.url));
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const username = String(body.username || "").trim();

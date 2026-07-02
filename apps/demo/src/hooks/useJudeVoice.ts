@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getJudeInstructions, getOpeningGreetingPrompt } from "@/lib/jude-system-prompt";
+import {
+  getConnectGreetingText,
+  getJudeInstructions,
+} from "@/lib/jude-system-prompt";
 import type { JudeVoiceMode } from "@/lib/voice-profiles";
 
 export type JudeVoiceState =
@@ -26,6 +29,32 @@ function waitForIceGathering(pc: RTCPeerConnection) {
   });
 }
 
+function waitForPeerConnection(pc: RTCPeerConnection, timeoutMs = 8000) {
+  if (pc.connectionState === "connected") return Promise.resolve();
+  return new Promise<void>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      pc.removeEventListener("connectionstatechange", onChange);
+      if (pc.connectionState === "connected") resolve();
+      else reject(new Error("Voice connection timed out."));
+    }, timeoutMs);
+
+    const onChange = () => {
+      if (pc.connectionState === "connected") {
+        window.clearTimeout(timer);
+        pc.removeEventListener("connectionstatechange", onChange);
+        resolve();
+      }
+      if (pc.connectionState === "failed" || pc.connectionState === "closed") {
+        window.clearTimeout(timer);
+        pc.removeEventListener("connectionstatechange", onChange);
+        reject(new Error("Voice connection failed."));
+      }
+    };
+
+    pc.addEventListener("connectionstatechange", onChange);
+  });
+}
+
 function extractAssistantText(message: Record<string, unknown>) {
   if (typeof message.text === "string" && message.text.trim()) {
     return message.text.trim();
@@ -33,10 +62,18 @@ function extractAssistantText(message: Record<string, unknown>) {
 
   if (message.type === "response.done") {
     const response = message.response as {
-      output?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>;
+      output?: Array<{
+        type?: string;
+        content?: Array<{ type?: string; text?: string }>;
+        text?: string;
+      }>;
     };
+
     const parts: string[] = [];
     for (const item of response?.output || []) {
+      if (typeof item.text === "string" && item.text.trim()) {
+        parts.push(item.text.trim());
+      }
       for (const block of item.content || []) {
         if (
           (block.type === "output_text" || block.type === "text") &&
@@ -66,8 +103,9 @@ function unlockAudioPlayback() {
   audio.play().catch(() => {});
 }
 
-export function useJudeVoice(mode: JudeVoiceMode = "good") {
+export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = false) {
   const [state, setState] = useState<JudeVoiceState>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -75,6 +113,7 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
   const playbackDoneRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(false);
   const greetedRef = useRef(false);
+  const textBufferRef = useRef("");
   const modeRef = useRef(mode);
   modeRef.current = mode;
 
@@ -99,11 +138,14 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
 
     playbackDoneRef.current?.();
     playbackDoneRef.current = null;
+    textBufferRef.current = "";
   }, []);
 
   const stop = useCallback(() => {
     teardown();
+    greetedRef.current = false;
     updateState("idle");
+    setErrorMessage("");
   }, [teardown, updateState]);
 
   const applySessionMode = useCallback((nextMode: JudeVoiceMode) => {
@@ -132,30 +174,14 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
     }
   }, []);
 
-  const triggerOpeningGreeting = useCallback(() => {
-    const dc = dcRef.current;
-    if (!dc || dc.readyState !== "open" || !activeRef.current || greetedRef.current) {
-      return;
-    }
-
-    greetedRef.current = true;
-    updateState("thinking");
-
-    dc.send(
-      JSON.stringify({
-        type: "response.create",
-        response: {
-          instructions: getOpeningGreetingPrompt(modeRef.current),
-        },
-      })
-    );
-  }, [updateState]);
-
   const playElevenLabs = useCallback(
     async (text: string) => {
+      if (!text.trim() || !activeRef.current) return;
+
       updateState("speaking");
       const response = await fetch("/api/voice/speak", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-Jude-Mode": modeRef.current,
@@ -164,6 +190,10 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
       });
 
       if (!response.ok || !activeRef.current) {
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || "Could not play Jude's voice.");
+        }
         return;
       }
 
@@ -195,8 +225,6 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
             reject(err);
           });
         });
-      } catch {
-        // Keep the session alive even if mobile blocks autoplay.
       } finally {
         URL.revokeObjectURL(url);
       }
@@ -204,40 +232,54 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
     [updateState]
   );
 
+  const speakAssistantText = useCallback(
+    async (text: string) => {
+      if (!text.trim() || !activeRef.current) return;
+      try {
+        await playElevenLabs(text);
+        if (activeRef.current) updateState("listening");
+      } catch (error) {
+        if (!activeRef.current) return;
+        setErrorMessage(error instanceof Error ? error.message : "Playback failed.");
+        updateState("error");
+        teardown();
+      }
+    },
+    [playElevenLabs, teardown, updateState]
+  );
+
   const handleFunctionCall = useCallback(
     async (name: string, argsJson: string, callId: string) => {
       const dc = dcRef.current;
       if (!dc || !activeRef.current) return;
 
-      if (name !== "search_jude_knowledge") {
-        dc.send(
-          JSON.stringify({
-            type: "conversation.item.create",
-            item: {
-              type: "function_call_output",
-              call_id: callId,
-              output: JSON.stringify({ error: "Unknown function" }),
-            },
-          })
-        );
-        dc.send(JSON.stringify({ type: "response.create" }));
-        return;
-      }
+      let output: Record<string, unknown> = { error: "Unknown function" };
 
-      let query = "";
-      try {
-        const args = JSON.parse(argsJson) as { query?: string };
-        query = args.query || "";
-      } catch {
-        query = argsJson;
-      }
+      if (name === "search_jude_knowledge") {
+        let query = "";
+        try {
+          const args = JSON.parse(argsJson) as { query?: string };
+          query = args.query || "";
+        } catch {
+          query = argsJson;
+        }
 
-      const rag = await fetch("/api/voice/rag", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-      });
-      const data = await rag.json();
+        const rag = await fetch("/api/voice/rag", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+        const data = await rag.json();
+        output = { context: data.context, results: data.results };
+      } else if (name === "get_gmail_summary" && gmailConnected) {
+        const summary = await fetch("/api/integrations/gmail/summary", {
+          method: "POST",
+          credentials: "include",
+        });
+        const data = await summary.json();
+        output = summary.ok ? data : { error: data.error || "Could not read Gmail." };
+      }
 
       if (!activeRef.current) return;
 
@@ -247,13 +289,13 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
           item: {
             type: "function_call_output",
             call_id: callId,
-            output: JSON.stringify({ context: data.context, results: data.results }),
+            output: JSON.stringify(output),
           },
         })
       );
       dc.send(JSON.stringify({ type: "response.create" }));
     },
-    []
+    [gmailConnected]
   );
 
   const connect = useCallback(async () => {
@@ -262,6 +304,8 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
     unlockAudioPlayback();
     activeRef.current = true;
     greetedRef.current = false;
+    textBufferRef.current = "";
+    setErrorMessage("");
     updateState("connecting");
 
     try {
@@ -300,7 +344,6 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
       dc.onopen = () => {
         if (!activeRef.current) return;
         applySessionMode(modeRef.current);
-        triggerOpeningGreeting();
       };
 
       dc.onclose = () => {
@@ -311,35 +354,55 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
         if (!activeRef.current) return;
 
         const message = JSON.parse(event.data) as Record<string, unknown>;
+        const type = String(message.type || "");
 
-        if (
-          message.type === "response.text.done" ||
-          message.type === "response.output_text.done" ||
-          message.type === "response.done"
-        ) {
-          const text = extractAssistantText(message);
-          if (text) {
-            await playElevenLabs(text);
-            if (activeRef.current) updateState("listening");
-          }
+        if (type === "session.created" || type === "session.updated") {
+          return;
         }
 
-        if (message.type === "response.function_call_arguments.done") {
+        if (type === "input_audio_buffer.speech_started") {
+          updateState("listening");
+          return;
+        }
+
+        if (type === "response.output_text.delta") {
+          textBufferRef.current += String(message.delta || "");
+          return;
+        }
+
+        if (
+          type === "response.text.done" ||
+          type === "response.output_text.done" ||
+          type === "response.done"
+        ) {
+          const text = extractAssistantText(message) || textBufferRef.current.trim();
+          textBufferRef.current = "";
+          if (text) {
+            updateState("thinking");
+            await speakAssistantText(text);
+          }
+          return;
+        }
+
+        if (type === "response.function_call_arguments.done") {
           updateState("thinking");
           await handleFunctionCall(
             String(message.name || ""),
             String(message.arguments || ""),
             String(message.call_id || "")
           );
+          return;
         }
 
-        if (message.type === "error") {
+        if (type === "error") {
+          const err = message.error as { message?: string } | undefined;
+          setErrorMessage(err?.message || "Voice session error.");
           teardown();
           updateState("error");
         }
       };
 
-      const offer = await pc.createOffer({ offerToReceiveAudio: true });
+      const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await waitForIceGathering(pc);
 
@@ -347,6 +410,7 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
 
       const sdpResponse = await fetch("/api/voice/connect", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/sdp",
           "X-Jude-Mode": modeRef.current,
@@ -356,16 +420,31 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
 
       if (!sdpResponse.ok) {
         const data = await sdpResponse.json().catch(() => ({}));
-        throw new Error(data.error || "Could not connect to OpenAI Realtime");
+        throw new Error(data.error || "Could not connect to OpenAI Realtime.");
       }
 
       const answerSdp = await sdpResponse.text();
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-    } catch {
+      await waitForPeerConnection(pc);
+
+      if (!activeRef.current) return;
+
+      updateState("listening");
+      greetedRef.current = true;
+      await speakAssistantText(getConnectGreetingText(modeRef.current));
+    } catch (error) {
       teardown();
+      setErrorMessage(error instanceof Error ? error.message : "Could not start voice.");
       updateState("error");
     }
-  }, [applySessionMode, handleFunctionCall, playElevenLabs, stop, teardown, triggerOpeningGreeting, updateState]);
+  }, [
+    applySessionMode,
+    handleFunctionCall,
+    speakAssistantText,
+    stop,
+    teardown,
+    updateState,
+  ]);
 
   const toggle = useCallback(() => {
     if (activeRef.current || state === "connecting") {
@@ -389,6 +468,8 @@ export function useJudeVoice(mode: JudeVoiceMode = "good") {
 
   return {
     state,
+    errorMessage,
+    connect,
     toggle,
     stop,
   };
