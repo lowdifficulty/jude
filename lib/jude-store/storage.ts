@@ -8,7 +8,9 @@ import { DATA_DIR, ensureDataDirs } from "./paths";
 const BLOB_ACCESS = "private" as const;
 
 function isServerlessRuntime() {
-  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME) return true;
+  if (!process.env.VERCEL) return false;
+  return process.env.NODE_ENV === "production";
 }
 
 function blobToken() {

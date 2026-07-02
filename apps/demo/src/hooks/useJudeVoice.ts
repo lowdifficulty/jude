@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  getConnectGreetingText,
-  getJudeInstructions,
-} from "@/lib/jude-system-prompt";
+import { getConnectGreetingText } from "@/lib/jude-system-prompt";
+import { getRealtimeSessionUpdate } from "@/lib/realtime-session";
 import type { JudeVoiceMode } from "@/lib/voice-profiles";
 
 export type JudeVoiceState =
@@ -155,12 +153,10 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
     dc.send(
       JSON.stringify({
         type: "session.update",
-        session: {
-          instructions: getJudeInstructions(nextMode),
-        },
+        session: getRealtimeSessionUpdate(nextMode, { gmailConnected }),
       })
     );
-  }, []);
+  }, [gmailConnected]);
 
   const interruptPlayback = useCallback(() => {
     if (audioRef.current) {
@@ -343,7 +339,6 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
 
       dc.onopen = () => {
         if (!activeRef.current) return;
-        applySessionMode(modeRef.current);
       };
 
       dc.onclose = () => {
@@ -408,47 +403,19 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
 
       if (!activeRef.current) return;
 
-      const sessionResponse = await fetch("/api/voice/session", {
+      const sdpResponse = await fetch("/api/voice/connect", {
         method: "POST",
         credentials: "include",
         headers: {
           "X-Jude-Mode": modeRef.current,
-        },
-      });
-
-      if (!sessionResponse.ok) {
-        const data = await sessionResponse.json().catch(() => ({}));
-        throw new Error(data.error || "Could not start voice session.");
-      }
-
-      const sessionData = (await sessionResponse.json()) as {
-        value?: string;
-        client_secret?: { value?: string };
-      };
-      const ephemeralKey = sessionData.value || sessionData.client_secret?.value;
-      if (!ephemeralKey) {
-        throw new Error("Voice session token was missing from the server.");
-      }
-
-      const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ephemeralKey}`,
           "Content-Type": "application/sdp",
         },
         body: pc.localDescription?.sdp || offer.sdp || "",
       });
 
       if (!sdpResponse.ok) {
-        const errorText = await sdpResponse.text();
-        let message = "Could not connect to OpenAI Realtime.";
-        try {
-          const parsed = JSON.parse(errorText) as { error?: { message?: string } };
-          message = parsed.error?.message || message;
-        } catch {
-          if (errorText) message = errorText.slice(0, 300);
-        }
-        throw new Error(message);
+        const data = await sdpResponse.json().catch(() => ({}));
+        throw new Error(data.error || "Could not connect to OpenAI Realtime.");
       }
 
       const answerSdp = await sdpResponse.text();

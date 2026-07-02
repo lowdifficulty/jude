@@ -12,6 +12,25 @@ export function getRealtimeSessionConfig(
   mode: JudeVoiceMode = "good",
   options: SessionOptions = {}
 ) {
+  const tools = buildRealtimeTools(options);
+
+  return {
+    type: "realtime" as const,
+    model: REALTIME_MODEL,
+    output_modalities: ["text"],
+    instructions: getJudeInstructions(mode),
+    tool_choice: "auto" as const,
+    tools,
+    audio: {
+      input: {
+        transcription: { model: "whisper-1" },
+        turn_detection: { type: "server_vad" },
+      },
+    },
+  };
+}
+
+function buildRealtimeTools(options: SessionOptions) {
   const tools: Array<{
     type: "function";
     name: string;
@@ -59,13 +78,20 @@ export function getRealtimeSessionConfig(
     });
   }
 
+  return tools;
+}
+
+/** GA Realtime API requires session.type on every session.update event. */
+export function getRealtimeSessionUpdate(
+  mode: JudeVoiceMode = "good",
+  options: SessionOptions = {}
+) {
   return {
     type: "realtime" as const,
-    model: REALTIME_MODEL,
-    output_modalities: ["text"],
     instructions: getJudeInstructions(mode),
     tool_choice: "auto" as const,
-    tools,
+    tools: buildRealtimeTools(options),
+    output_modalities: ["text"],
     audio: {
       input: {
         transcription: { model: "whisper-1" },
