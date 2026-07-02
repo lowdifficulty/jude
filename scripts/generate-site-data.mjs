@@ -38,13 +38,16 @@ const pages = fs
   .filter((f) => f.endsWith(".md"))
   .map((file) => {
     const raw = fs.readFileSync(path.join(PAGES_DIR, file), "utf8");
-    const { data } = parseMarkdown(raw);
+    const { data, content } = parseMarkdown(raw);
     const slug = normalizeSlug(data.slug || `/${file.replace(".md", "")}/`);
     return {
       slug,
       title: data.title || slug,
       metaTitle: data.meta_title || `${data.title} | Jude`,
       metaDescription: data.meta_description || "",
+      primaryKeyword: data.primary_keyword || "",
+      audience: data.audience || "",
+      body: content.trim(),
     };
   });
 
