@@ -2,7 +2,7 @@ import { getJudeInstructions } from "@/lib/jude-system-prompt";
 import type { JudeVoiceMode } from "@/lib/voice-profiles";
 
 export const REALTIME_MODEL =
-  process.env.OPENAI_REALTIME_MODEL || "gpt-realtime";
+  process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-1.5";
 
 type SessionOptions = {
   gmailConnected?: boolean;
@@ -88,6 +88,7 @@ export function getRealtimeSessionUpdate(
 ) {
   return {
     type: "realtime" as const,
+    model: REALTIME_MODEL,
     instructions: getJudeInstructions(mode),
     tool_choice: "auto" as const,
     tools: buildRealtimeTools(options),
