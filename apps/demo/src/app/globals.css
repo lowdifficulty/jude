@@ -161,19 +161,44 @@ body {
   white-space: nowrap;
 }
 
-.jude-settings-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+.jude-mode-toggle {
+  display: flex;
+  align-items: stretch;
+  border-radius: 999px;
   border: 1px solid rgba(245, 240, 234, 0.15);
   background: rgba(245, 240, 234, 0.05);
-  color: rgba(245, 240, 234, 0.5);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.jude-mode-toggle__btn {
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: none;
+  background: transparent;
+  color: rgba(245, 240, 234, 0.45);
+  font-size: clamp(0.68rem, 2.4vw, 0.82rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.jude-mode-toggle__btn--active {
+  background: rgba(245, 240, 234, 0.12);
+  color: rgba(245, 240, 234, 0.92);
+}
+
+.jude-mode-toggle__btn--evil.jude-mode-toggle__btn--active {
+  background: rgba(120, 0, 0, 0.55);
+  color: #ff8080;
+  box-shadow: inset 0 0 12px rgba(255, 0, 0, 0.25);
 }
 
 .jude-main {
@@ -187,6 +212,7 @@ body {
 }
 
 .jude-orb {
+  position: relative;
   width: clamp(132px, 38vw, 260px);
   height: clamp(132px, 38vw, 260px);
   max-width: min(260px, calc(100vw - 48px));
@@ -205,6 +231,10 @@ body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   flex-shrink: 0;
+}
+
+.jude-orb__core {
+  display: none;
 }
 
 .jude-orb--connecting {
@@ -279,4 +309,265 @@ body {
     height: clamp(112px, 30vw, 180px);
     max-height: min(180px, calc(100dvh - 14rem));
   }
+}
+
+@media (max-width: 420px) {
+  .jude-header-meta {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+/* ── Evil mode ── */
+
+@keyframes evil-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes evil-glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 50px 18px rgba(180, 0, 0, 0.45),
+      0 0 100px 36px rgba(80, 0, 0, 0.35),
+      inset 0 0 50px rgba(255, 0, 0, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 70px 28px rgba(255, 20, 20, 0.55),
+      0 0 140px 50px rgba(120, 0, 0, 0.4),
+      inset 0 0 60px rgba(255, 60, 60, 0.25);
+  }
+}
+
+@keyframes evil-glow-live {
+  0%,
+  100% {
+    box-shadow:
+      0 0 80px 26px rgba(255, 0, 0, 0.5),
+      0 0 120px 40px rgba(100, 0, 0, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 100px 34px rgba(255, 40, 40, 0.65),
+      0 0 160px 56px rgba(140, 0, 0, 0.5);
+  }
+}
+
+@keyframes evil-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  93% {
+    opacity: 0.82;
+  }
+  94% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes evil-scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes evil-core-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+}
+
+.jude-shell--evil {
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(80, 0, 0, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 40%, #1a0000 0%, #0a0000 45%, #000000 100%);
+  animation: evil-flicker 8s linear infinite;
+}
+
+.jude-shell--evil::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 0, 0, 0.03) 0px,
+    rgba(255, 0, 0, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.35;
+  z-index: 1;
+}
+
+.jude-shell--evil::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 0, 0, 0.04) 50%,
+    transparent 100%
+  );
+  animation: evil-scan 6s linear infinite;
+  z-index: 1;
+}
+
+.jude-evil-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 35%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  z-index: 1;
+}
+
+.jude-shell--evil .jude-header,
+.jude-shell--evil .jude-main,
+.jude-shell--evil .jude-status {
+  position: relative;
+  z-index: 2;
+}
+
+.jude-shell--evil .jude-header-brand h1 {
+  color: #ff4444;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 0 20px rgba(255, 0, 0, 0.6),
+    0 0 40px rgba(120, 0, 0, 0.4);
+}
+
+.jude-shell--evil .jude-header-brand p {
+  color: rgba(255, 120, 120, 0.75);
+}
+
+.jude-shell--evil .jude-header-sub {
+  color: rgba(255, 80, 80, 0.45);
+}
+
+.jude-shell--evil .jude-clock {
+  color: rgba(255, 100, 100, 0.8);
+  text-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+}
+
+.jude-shell--evil .jude-mode-toggle {
+  border-color: rgba(255, 0, 0, 0.25);
+  background: rgba(20, 0, 0, 0.6);
+  box-shadow: 0 0 16px rgba(255, 0, 0, 0.15);
+}
+
+.jude-shell--evil .jude-mode-toggle__btn {
+  color: rgba(255, 120, 120, 0.45);
+}
+
+.jude-shell--evil .jude-mode-toggle__btn--active {
+  background: rgba(60, 0, 0, 0.5);
+  color: rgba(255, 200, 200, 0.9);
+}
+
+.jude-shell--evil .jude-orb {
+  background:
+    radial-gradient(circle at 50% 50%, #000 0%, #000 18%, transparent 19%),
+    radial-gradient(
+      circle at 42% 38%,
+      #ff6666 0%,
+      #cc0000 28%,
+      #660000 55%,
+      #1a0000 78%,
+      #000 100%
+    );
+  animation: evil-glow-pulse 3s ease-in-out infinite, evil-breathe 5s ease-in-out infinite;
+}
+
+.jude-shell--evil .jude-orb__core {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff0000 0%, #660000 60%, #000 100%);
+  box-shadow:
+    0 0 20px rgba(255, 0, 0, 0.9),
+    inset 0 0 8px rgba(0, 0, 0, 0.8);
+  animation: evil-core-pulse 2.5s ease-in-out infinite;
+}
+
+.jude-shell--evil .jude-orb--connecting {
+  animation: evil-glow-live 0.9s ease-in-out infinite, evil-breathe 2s ease-in-out infinite;
+}
+
+.jude-shell--evil .jude-orb--live {
+  animation: evil-glow-live 1.5s ease-in-out infinite, evil-breathe 3.5s ease-in-out infinite;
+}
+
+.jude-shell--evil .jude-orb--speaking {
+  animation: evil-glow-live 1s ease-in-out infinite, evil-breathe 2.5s ease-in-out infinite;
+  transform: scale(1.06);
+}
+
+.jude-shell--evil .jude-orb--error {
+  animation: evil-glow-pulse 2s ease-in-out infinite;
+  filter: saturate(1.2) brightness(0.7);
+}
+
+.jude-shell--evil .jude-status {
+  border-top-color: rgba(255, 0, 0, 0.2);
+  box-shadow: 0 -8px 24px rgba(255, 0, 0, 0.08);
+}
+
+.jude-shell--evil .jude-status-item {
+  color: rgba(255, 100, 100, 0.55);
+}
+
+.jude-shell--evil .jude-status-icon {
+  opacity: 0.85;
+  color: #ff4444;
+  filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.5));
+}
+
+.jude-shell--evil .jude-status-label {
+  color: rgba(255, 80, 80, 0.45);
+}
+
+.jude-shell--evil .jude-status-value {
+  color: rgba(255, 140, 140, 0.85);
+  text-shadow: 0 0 6px rgba(255, 0, 0, 0.25);
+}
+
+body[data-jude-mode="evil"] {
+  background: #000;
 }
