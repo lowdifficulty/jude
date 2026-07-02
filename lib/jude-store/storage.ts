@@ -1,9 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { del, list, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import { kv } from "@vercel/kv";
 import { decryptSecret, encryptSecret } from "./crypto";
 import { DATA_DIR, ensureDataDirs } from "./paths";
+
+const BLOB_ACCESS = "private" as const;
 
 function isServerlessRuntime() {
   return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
@@ -30,6 +32,23 @@ function blobCommandOptions() {
   return token ? { token } : {};
 }
 
+function blobPutOptions() {
+  return {
+    access: BLOB_ACCESS,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/octet-stream",
+    ...blobCommandOptions(),
+  };
+}
+
+function blobGetOptions() {
+  return {
+    access: BLOB_ACCESS,
+    ...blobCommandOptions(),
+  };
+}
+
 export function hasPersistentStorage() {
   return useKvStorage() || useBlobStorage() || !isServerlessRuntime();
 }
@@ -54,16 +73,10 @@ function kvKey(relativePath: string) {
   return `jude:${relativePath.replace(/\\/g, "/")}`;
 }
 
-async function deleteBlobIfExists(relativePath: string) {
-  const pathname = blobPath(relativePath);
-  const { blobs } = await list({
-    prefix: pathname,
-    ...blobCommandOptions(),
-  });
-  const existing = blobs.find((item) => item.pathname === pathname);
-  if (existing) {
-    await del(existing.url, blobCommandOptions());
-  }
+async function readBlobText(relativePath: string) {
+  const result = await get(blobPath(relativePath), blobGetOptions());
+  if (!result || result.statusCode !== 200 || !result.stream) return null;
+  return new Response(result.stream).text();
 }
 
 export async function readStoreJson<T>(relativePath: string, fallback: T): Promise<T> {
@@ -79,16 +92,8 @@ export async function readStoreJson<T>(relativePath: string, fallback: T): Promi
 
   if (useBlobStorage()) {
     try {
-      const pathname = blobPath(relativePath);
-      const { blobs } = await list({
-        prefix: pathname,
-        ...blobCommandOptions(),
-      });
-      const blob = blobs.find((item) => item.pathname === pathname);
-      if (!blob) return fallback;
-      const response = await fetch(blob.downloadUrl);
-      if (!response.ok) return fallback;
-      const encrypted = await response.text();
+      const encrypted = await readBlobText(relativePath);
+      if (!encrypted) return fallback;
       return JSON.parse(decryptSecret(encrypted)) as T;
     } catch {
       return fallback;
@@ -110,13 +115,7 @@ export async function writeStoreJson<T>(relativePath: string, data: T): Promise<
   }
 
   if (useBlobStorage()) {
-    await deleteBlobIfExists(relativePath);
-    await put(blobPath(relativePath), encryptSecret(JSON.stringify(data)), {
-      access: "public",
-      ...blobCommandOptions(),
-      addRandomSuffix: false,
-      contentType: "application/octet-stream",
-    });
+    await put(blobPath(relativePath), encryptSecret(JSON.stringify(data)), blobPutOptions());
     return;
   }
 
@@ -133,7 +132,7 @@ export async function deleteStoreJson(relativePath: string): Promise<void> {
   }
 
   if (useBlobStorage()) {
-    await deleteBlobIfExists(relativePath);
+    await del(blobPath(relativePath), blobGetOptions());
     return;
   }
 

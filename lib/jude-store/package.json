@@ -5,7 +5,7 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "dependencies": {
-    "@vercel/blob": "^0.27.1",
+    "@vercel/blob": "^2.5.0",
     "@vercel/kv": "^3.0.0"
   },
   "exports": {
