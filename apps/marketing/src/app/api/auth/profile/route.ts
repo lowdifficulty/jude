@@ -14,7 +14,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  return NextResponse.json({ profile: sanitizeProfileForClient(getOrCreateProfile(user)) });
+  return NextResponse.json({ profile: sanitizeProfileForClient(await getOrCreateProfile(user)) });
 }
 
 export async function POST(request: Request) {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   if (action === "onboarding") {
     const onboardingGroups = (body.onboardingGroups || []) as OnboardingGroup[];
     const connectedDeviceIds = (body.connectedDeviceIds || []) as string[];
-    const profile = updateOnboarding(user, { onboardingGroups, connectedDeviceIds });
+    const profile = await updateOnboarding(user, { onboardingGroups, connectedDeviceIds });
     return NextResponse.json({ ok: true, profile: sanitizeProfileForClient(profile) });
   }
 
@@ -40,18 +40,18 @@ export async function POST(request: Request) {
     if (!title || !text) {
       return NextResponse.json({ error: "Title and text are required." }, { status: 400 });
     }
-    addPersonalTraining(user, { title, category, text });
+    await addPersonalTraining(user, { title, category, text });
     return NextResponse.json({
       ok: true,
-      profile: sanitizeProfileForClient(getOrCreateProfile(user)),
+      profile: sanitizeProfileForClient(await getOrCreateProfile(user)),
     });
   }
 
   if (action === "notes") {
-    const profile = getOrCreateProfile(user);
+    const profile = await getOrCreateProfile(user);
     profile.preferences.notes = String(body.notes || "");
     profile.updatedAt = new Date().toISOString();
-    saveUserProfile(profile);
+    await saveUserProfile(profile);
     return NextResponse.json({ ok: true, profile: sanitizeProfileForClient(profile) });
   }
 

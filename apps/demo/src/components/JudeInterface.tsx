@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { JudeExplosionFX, JudeMatrixRain, JudeRestoreFX } from "@/components/JudeExplosionFX";
 import { JudeFooterDock } from "@/components/JudeFooterDock";
+import { JudeLogoutButton } from "@/components/JudeLogoutButton";
 import { JudeGames, type GameId } from "@/components/JudeGames";
 import { JudeMarketplace } from "@/components/JudeMarketplace";
 import { JudeOrb } from "@/components/JudeOrb";
@@ -174,7 +175,7 @@ export function JudeInterface() {
     setActiveGame("menu");
   };
 
-  if (loading) {
+  if (loading || !user) {
     return <div className="jude-auth jude-auth--loading">Loading your Jude…</div>;
   }
 
@@ -210,9 +211,7 @@ export function JudeInterface() {
           {user && (
             <div className="jude-account-chip">
               <span>{user.displayName}</span>
-              <button type="button" onClick={() => void logout()}>
-                Sign out
-              </button>
+              <JudeLogoutButton onLogout={logout} isEvil={isEvil} />
             </div>
           )}
           <span className="jude-clock">{time}</span>
@@ -273,6 +272,7 @@ export function JudeInterface() {
         onOpenMarketplace={openMarketplace}
         onOpenApp={handleOpenApp}
         onReorder={handleFooterReorder}
+        onLogout={logout}
       />
 
       <JudeMarketplace

@@ -7,7 +7,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ authenticated: false });
   }
-  const profile = sanitizeProfileForClient(getOrCreateProfile(user));
+  const profile = sanitizeProfileForClient(await getOrCreateProfile(user));
   const ssoToken = createSsoToken(user.id);
   const demoSsoUrl = `${JUDE_DEMO_URL}/api/auth/sso?token=${encodeURIComponent(ssoToken)}`;
   return NextResponse.json({

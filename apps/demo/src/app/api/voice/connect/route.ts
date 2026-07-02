@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const mode = parseJudeVoiceMode(request.headers.get("x-jude-mode"));
   const sessionJson = JSON.stringify(
     getRealtimeSessionConfig(mode, {
-      gmailConnected: hasGmailTokens(user.id),
+      gmailConnected: await hasGmailTokens(user.id),
     })
   );
 

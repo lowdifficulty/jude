@@ -13,8 +13,8 @@ export async function POST(request: Request) {
   const displayName = String(body.displayName || "").trim();
 
   try {
-    const user = createUser({ username, password, displayName });
-    getOrCreateProfile(user);
+    const user = await createUser({ username, password, displayName });
+    await getOrCreateProfile(user);
 
     const response = NextResponse.json({
       ok: true,

@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  const profile = sanitizeProfileForClient(getOrCreateProfile(user));
+  const profile = sanitizeProfileForClient(await getOrCreateProfile(user));
   return NextResponse.json({
     authenticated: true,
     user: {
@@ -39,12 +39,12 @@ export async function POST(request: Request) {
     const connectedAppIds = Array.isArray(body.connectedAppIds)
       ? body.connectedAppIds.map(String)
       : [];
-    const profile = updateConnectedApps(user, connectedAppIds);
+    const profile = await updateConnectedApps(user, connectedAppIds);
     return NextResponse.json({ ok: true, profile: sanitizeProfileForClient(profile) });
   }
 
   if (action === "appSettings") {
-    const profile = updateAppSettings(user, {
+    const profile = await updateAppSettings(user, {
       weatherZip: body.weatherZip ? String(body.weatherZip) : undefined,
       mode: body.mode === "good" || body.mode === "evil" ? (body.mode as JudeMode) : undefined,
       dockOrder: Array.isArray(body.dockOrder) ? body.dockOrder.map(String) : undefined,

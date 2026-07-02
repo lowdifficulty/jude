@@ -71,7 +71,7 @@ export async function searchKnowledge(
 
   const user = await getAuthenticatedUser();
   const personalChunks = user
-    ? profileToKnowledgeChunks(getOrCreateProfile(user)).map((chunk) => ({
+    ? profileToKnowledgeChunks(await getOrCreateProfile(user)).map((chunk) => ({
         id: chunk.id,
         title: chunk.title,
         slug: "/my-jude/",

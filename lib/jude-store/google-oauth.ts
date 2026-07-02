@@ -118,9 +118,9 @@ async function fetchGoogleEmail(accessToken: string) {
 export async function completeGmailOAuth(userId: string, code: string, redirectUri: string) {
   const tokens = await exchangeCodeForTokens(code, redirectUri);
   const email = await fetchGoogleEmail(tokens.access_token);
-  const existing = getGmailTokens(userId);
+  const existing = await getGmailTokens(userId);
 
-  saveGmailTokens(userId, {
+  await saveGmailTokens(userId, {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || existing?.refreshToken || "",
     expiresAt: Date.now() + tokens.expires_in * 1000 - 60_000,
@@ -132,7 +132,7 @@ export async function completeGmailOAuth(userId: string, code: string, redirectU
 }
 
 export async function getValidGmailAccessToken(userId: string) {
-  const record = getGmailTokens(userId);
+  const record = await getGmailTokens(userId);
   if (!record) return null;
 
   if (Date.now() < record.expiresAt) {
@@ -142,7 +142,7 @@ export async function getValidGmailAccessToken(userId: string) {
   if (!record.refreshToken) return null;
 
   const refreshed = await refreshAccessToken(record.refreshToken);
-  saveGmailTokens(userId, {
+  await saveGmailTokens(userId, {
     ...record,
     accessToken: refreshed.access_token,
     refreshToken: refreshed.refresh_token || record.refreshToken,
@@ -206,7 +206,7 @@ export async function fetchGmailSummary(userId: string, maxMessages = 5) {
     })
   );
 
-  const record = getGmailTokens(userId);
+  const record = await getGmailTokens(userId);
   return {
     email: record?.email || "",
     unreadCount: messages.length,
@@ -215,12 +215,12 @@ export async function fetchGmailSummary(userId: string, maxMessages = 5) {
 }
 
 export async function revokeGmailAccess(userId: string) {
-  const record = getGmailTokens(userId);
+  const record = await getGmailTokens(userId);
   if (record?.accessToken) {
     await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(record.accessToken)}`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     }).catch(() => {});
   }
-  clearGmailTokens(userId);
+  await clearGmailTokens(userId);
 }

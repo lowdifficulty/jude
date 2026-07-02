@@ -6,6 +6,7 @@ import siteData from "@/data/site-data.json";
 
 export function SiteNav() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -13,6 +14,20 @@ export function SiteNav() {
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    void fetch("/api/auth/session", { credentials: "include" })
+      .then((response) => response.json())
+      .then((data) => setSignedIn(Boolean(data.authenticated)))
+      .catch(() => setSignedIn(false));
+  }, []);
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    setSignedIn(false);
+    setMenuOpen(false);
+    window.location.href = "/";
+  };
 
   return (
     <nav className="landing-nav">
@@ -54,9 +69,24 @@ export function SiteNav() {
           <Link href="/onboarding" onClick={() => setMenuOpen(false)}>
             Connect
           </Link>
-          <Link href="/login" onClick={() => setMenuOpen(false)}>
-            Login
-          </Link>
+          {signedIn ? (
+            <>
+              <Link href="/my-jude" onClick={() => setMenuOpen(false)}>
+                My Jude
+              </Link>
+              <button
+                type="button"
+                className="landing-nav-logout"
+                onClick={() => void logout()}
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <Link href="/login" onClick={() => setMenuOpen(false)}>
+              Login
+            </Link>
+          )}
           <a
             href="https://jude.one"
             target="_blank"

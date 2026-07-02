@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const user = verifyUserCredentials(username, password);
+  const user = await verifyUserCredentials(username, password);
   if (!user) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
   }

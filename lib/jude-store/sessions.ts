@@ -59,5 +59,5 @@ export async function getAuthenticatedUser() {
   const cookieStore = await cookies();
   const userId = parseUserCookieValue(cookieStore.get(USER_COOKIE)?.value);
   if (!userId) return null;
-  return findUserById(userId);
+  return await findUserById(userId);
 }

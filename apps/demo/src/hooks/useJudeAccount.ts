@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { JudeMode } from "@jude/store";
 import type { MarketplaceAppId } from "@/lib/marketplace-apps";
 
@@ -29,6 +30,7 @@ type AccountState = {
 };
 
 export function useJudeAccount() {
+  const router = useRouter();
   const [state, setState] = useState<AccountState>({
     loading: true,
     user: null,
@@ -36,7 +38,7 @@ export function useJudeAccount() {
   });
 
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/auth/session");
+    const response = await fetch("/api/auth/session", { credentials: "include" });
     const data = await response.json();
     if (!data.authenticated || data.role !== "user") {
       setState({ loading: false, user: null, profile: null });
@@ -54,9 +56,16 @@ export function useJudeAccount() {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (!state.loading && !state.user) {
+      router.replace("/login");
+    }
+  }, [router, state.loading, state.user]);
+
   const saveConnectedApps = useCallback(async (connectedAppIds: MarketplaceAppId[]) => {
     const response = await fetch("/api/auth/profile", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "connectedApps", connectedAppIds }),
     });
@@ -74,6 +83,7 @@ export function useJudeAccount() {
     async (input: { weatherZip?: string; mode?: JudeMode; dockOrder?: string[] }) => {
       const response = await fetch("/api/auth/profile", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "appSettings", ...input }),
       });
@@ -90,7 +100,7 @@ export function useJudeAccount() {
   );
 
   const logout = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     window.location.href = "/login";
   }, []);
 

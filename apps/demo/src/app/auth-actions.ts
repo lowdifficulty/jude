@@ -42,8 +42,8 @@ export async function registerAction(
   const next = safeNextPath(formData.get("next"));
 
   try {
-    const user = createUser({ username, password, displayName });
-    getOrCreateProfile(user);
+    const user = await createUser({ username, password, displayName });
+    await getOrCreateProfile(user);
     const cookieStore = await cookies();
     cookieStore.set(USER_COOKIE, buildUserCookieValue(user.id), cookieOptions(60 * 60 * 24 * 30));
   } catch (error) {
@@ -69,7 +69,7 @@ export async function loginAction(
     redirect("/admin");
   }
 
-  const user = verifyUserCredentials(username, password);
+  const user = await verifyUserCredentials(username, password);
   if (!user) {
     return { error: "Invalid username or password." };
   }

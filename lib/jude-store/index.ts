@@ -8,3 +8,4 @@ export * from "./sessions";
 export * from "./sso";
 export * from "./integrations";
 export * from "./google-oauth";
+export * from "./storage";

@@ -1,23 +1,17 @@
-import fs from "fs";
-import path from "path";
 import { decryptSecret, encryptSecret } from "./crypto";
-import { ensureDataDirs, INTEGRATIONS_DIR } from "./paths";
+import { readStoreJson, writeStoreJson } from "./storage";
 import type { GmailTokenRecord, UserIntegrationsFile } from "./types";
 
-function integrationsPath(userId: string) {
-  return path.join(INTEGRATIONS_DIR, `${userId}.json`);
+function integrationsStorePath(userId: string) {
+  return `integrations/${userId}.json`;
 }
 
-function readIntegrationsFile(userId: string): UserIntegrationsFile {
-  ensureDataDirs();
-  const file = integrationsPath(userId);
-  if (!fs.existsSync(file)) return {};
-  return JSON.parse(fs.readFileSync(file, "utf8")) as UserIntegrationsFile;
+async function readIntegrationsFile(userId: string): Promise<UserIntegrationsFile> {
+  return readStoreJson<UserIntegrationsFile>(integrationsStorePath(userId), {});
 }
 
-function writeIntegrationsFile(userId: string, data: UserIntegrationsFile) {
-  ensureDataDirs();
-  fs.writeFileSync(integrationsPath(userId), JSON.stringify(data, null, 2));
+async function writeIntegrationsFile(userId: string, data: UserIntegrationsFile) {
+  await writeStoreJson(integrationsStorePath(userId), data);
 }
 
 type StoredGmailTokenRecord = Omit<GmailTokenRecord, "accessToken" | "refreshToken"> & {
@@ -41,24 +35,25 @@ function deserializeGmail(record: StoredGmailTokenRecord): GmailTokenRecord {
   };
 }
 
-export function saveGmailTokens(userId: string, record: GmailTokenRecord) {
-  const file = readIntegrationsFile(userId);
+export async function saveGmailTokens(userId: string, record: GmailTokenRecord) {
+  const file = await readIntegrationsFile(userId);
   file.gmail = serializeGmail(record);
-  writeIntegrationsFile(userId, file);
+  await writeIntegrationsFile(userId, file);
 }
 
-export function getGmailTokens(userId: string): GmailTokenRecord | null {
-  const file = readIntegrationsFile(userId);
+export async function getGmailTokens(userId: string): Promise<GmailTokenRecord | null> {
+  const file = await readIntegrationsFile(userId);
   if (!file.gmail) return null;
   return deserializeGmail(file.gmail);
 }
 
-export function clearGmailTokens(userId: string) {
-  const file = readIntegrationsFile(userId);
+export async function clearGmailTokens(userId: string) {
+  const file = await readIntegrationsFile(userId);
   delete file.gmail;
-  writeIntegrationsFile(userId, file);
+  await writeIntegrationsFile(userId, file);
 }
 
-export function hasGmailTokens(userId: string) {
-  return Boolean(readIntegrationsFile(userId).gmail);
+export async function hasGmailTokens(userId: string) {
+  const file = await readIntegrationsFile(userId);
+  return Boolean(file.gmail);
 }

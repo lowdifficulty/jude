@@ -148,6 +148,23 @@ input {
   color: rgba(245, 240, 234, 0.95);
 }
 
+.landing-nav-logout {
+  border: 1px solid rgba(245, 240, 234, 0.18);
+  background: transparent;
+  color: rgba(245, 240, 234, 0.65);
+  font-size: 0.95rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.landing-nav-logout:hover {
+  color: rgba(245, 240, 234, 0.95);
+  border-color: rgba(245, 240, 234, 0.35);
+  background: rgba(245, 240, 234, 0.06);
+}
+
 .section-green {
   background: var(--green-deep);
   color: #f5f0ea;

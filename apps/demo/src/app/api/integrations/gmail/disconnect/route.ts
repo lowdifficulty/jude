@@ -9,7 +9,7 @@ export async function POST() {
   }
 
   await revokeGmailAccess(user.id);
-  const profile = sanitizeProfileForClient(clearGmailIntegration(user));
+  const profile = sanitizeProfileForClient(await clearGmailIntegration(user));
 
   return NextResponse.json({ ok: true, profile });
 }
@@ -20,9 +20,9 @@ export async function GET() {
     return NextResponse.json({ connected: false }, { status: 401 });
   }
 
-  const profile = sanitizeProfileForClient(getOrCreateProfile(user));
+  const profile = sanitizeProfileForClient(await getOrCreateProfile(user));
   return NextResponse.json({
-    connected: hasGmailTokens(user.id),
+    connected: await hasGmailTokens(user.id),
     email: profile.integrations.gmail?.email || null,
   });
 }

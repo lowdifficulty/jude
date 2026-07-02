@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   const mode = parseJudeVoiceMode(request.headers.get("x-jude-mode"));
   const sessionConfig = getRealtimeSessionConfig(mode, {
-    gmailConnected: hasGmailTokens(user.id),
+    gmailConnected: await hasGmailTokens(user.id),
   });
 
   const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {

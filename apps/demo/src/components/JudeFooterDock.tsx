@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { JudeAppIcon } from "@/components/JudeAppIcon";
+import { JudeLogoutButton } from "@/components/JudeLogoutButton";
 import {
   MARKETPLACE_APPS,
   type MarketplaceAppId,
@@ -15,6 +16,7 @@ type JudeFooterDockProps = {
   onOpenMarketplace: () => void;
   onOpenApp: (id: MarketplaceAppId) => void;
   onReorder: (ids: MarketplaceAppId[]) => void;
+  onLogout?: () => void;
 };
 
 type ScrollState = {
@@ -96,6 +98,7 @@ export function JudeFooterDock({
   onOpenMarketplace,
   onOpenApp,
   onReorder,
+  onLogout,
 }: JudeFooterDockProps) {
   const isEvil = mode === "evil";
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -480,7 +483,7 @@ export function JudeFooterDock({
   return (
     <>
       <footer className={`jude-status${scrollState.overflow ? " jude-status--overflow" : ""}`}>
-        <div className="jude-status-shell">
+        <div className={`jude-status-shell${onLogout ? " jude-status-shell--with-logout" : ""}`}>
           {scrollState.canLeft && (
             <button
               type="button"
@@ -546,6 +549,10 @@ export function JudeFooterDock({
             >
               {chevronRight}
             </button>
+          )}
+
+          {onLogout && (
+            <JudeLogoutButton onLogout={onLogout} variant="dock" isEvil={isEvil} />
           )}
         </div>
 

@@ -1,34 +1,29 @@
-import fs from "fs";
 import { hashPassword, verifyPassword } from "./crypto";
-import { ensureDataDirs, USERS_FILE } from "./paths";
+import { readStoreJson, writeStoreJson } from "./storage";
 import type { StoredUser } from "./types";
 
 type UsersFile = { users: StoredUser[] };
 
-function readUsersFile(): UsersFile {
-  ensureDataDirs();
-  if (!fs.existsSync(USERS_FILE)) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify({ users: [] }, null, 2));
-    return { users: [] };
-  }
-  return JSON.parse(fs.readFileSync(USERS_FILE, "utf8")) as UsersFile;
+async function readUsersFile(): Promise<UsersFile> {
+  return readStoreJson<UsersFile>("users.json", { users: [] });
 }
 
-function writeUsersFile(data: UsersFile) {
-  ensureDataDirs();
-  fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2));
+async function writeUsersFile(data: UsersFile) {
+  await writeStoreJson("users.json", data);
 }
 
-export function findUserByUsername(username: string) {
+export async function findUserByUsername(username: string) {
   const normalized = username.trim().toLowerCase();
-  return readUsersFile().users.find((u) => u.username === normalized) || null;
+  const file = await readUsersFile();
+  return file.users.find((u) => u.username === normalized) || null;
 }
 
-export function findUserById(id: string) {
-  return readUsersFile().users.find((u) => u.id === id) || null;
+export async function findUserById(id: string) {
+  const file = await readUsersFile();
+  return file.users.find((u) => u.id === id) || null;
 }
 
-export function createUser(input: {
+export async function createUser(input: {
   username: string;
   password: string;
   displayName?: string;
@@ -40,7 +35,7 @@ export function createUser(input: {
   if (input.password.length < 1) {
     throw new Error("Password is required.");
   }
-  if (findUserByUsername(username)) {
+  if (await findUserByUsername(username)) {
     throw new Error("Username is already taken.");
   }
 
@@ -54,14 +49,14 @@ export function createUser(input: {
     createdAt: new Date().toISOString(),
   };
 
-  const file = readUsersFile();
+  const file = await readUsersFile();
   file.users.push(user);
-  writeUsersFile(file);
+  await writeUsersFile(file);
   return user;
 }
 
-export function verifyUserCredentials(username: string, password: string) {
-  const user = findUserByUsername(username);
+export async function verifyUserCredentials(username: string, password: string) {
+  const user = await findUserByUsername(username);
   if (!user) return null;
   if (!verifyPassword(password, user.passwordSalt, user.passwordHash)) return null;
   return user;

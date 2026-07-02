@@ -20,6 +20,6 @@ export async function GET() {
       username: user.username,
       displayName: user.displayName,
     },
-    profile: sanitizeProfileForClient(getOrCreateProfile(user)),
+    profile: sanitizeProfileForClient(await getOrCreateProfile(user)),
   });
 }

@@ -1,17 +1,9 @@
-import fs from "fs";
-import path from "path";
-import { ensureDataDirs, PROFILES_DIR } from "./paths";
+import { readStoreJson, writeStoreJson } from "./storage";
 import type { AdminEntry, JudeMode, OnboardingGroup, UserProfile } from "./types";
 import type { StoredUser } from "./types";
-function profilePath(userId: string) {
-  return path.join(PROFILES_DIR, `${userId}.json`);
-}
 
-export function getUserProfile(userId: string): UserProfile | null {
-  ensureDataDirs();
-  const file = profilePath(userId);
-  if (!fs.existsSync(file)) return null;
-  return migrateProfile(JSON.parse(fs.readFileSync(file, "utf8")) as UserProfile);
+function profileStorePath(userId: string) {
+  return `profiles/${userId}.json`;
 }
 
 function migrateProfile(profile: UserProfile): UserProfile {
@@ -22,13 +14,18 @@ function migrateProfile(profile: UserProfile): UserProfile {
     integrations: profile.integrations ?? {},
   };
 }
-export function saveUserProfile(profile: UserProfile) {
-  ensureDataDirs();
-  fs.writeFileSync(profilePath(profile.userId), JSON.stringify(profile, null, 2));
+
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  const profile = await readStoreJson<UserProfile | null>(profileStorePath(userId), null);
+  return profile ? migrateProfile(profile) : null;
 }
 
-export function getOrCreateProfile(user: StoredUser): UserProfile {
-  const existing = getUserProfile(user.id);
+export async function saveUserProfile(profile: UserProfile) {
+  await writeStoreJson(profileStorePath(profile.userId), profile);
+}
+
+export async function getOrCreateProfile(user: StoredUser): Promise<UserProfile> {
+  const existing = await getUserProfile(user.id);
   if (existing) return existing;
 
   const profile: UserProfile = {
@@ -43,30 +40,31 @@ export function getOrCreateProfile(user: StoredUser): UserProfile {
     personalTraining: [],
     preferences: {},
     updatedAt: new Date().toISOString(),
-  };  saveUserProfile(profile);
+  };
+  await saveUserProfile(profile);
   return profile;
 }
 
-export function updateOnboarding(
+export async function updateOnboarding(
   user: StoredUser,
   input: {
     onboardingGroups: OnboardingGroup[];
     connectedDeviceIds: string[];
   }
 ) {
-  const profile = getOrCreateProfile(user);
+  const profile = await getOrCreateProfile(user);
   profile.onboardingGroups = input.onboardingGroups;
   profile.connectedDeviceIds = input.connectedDeviceIds;
   profile.updatedAt = new Date().toISOString();
-  saveUserProfile(profile);
+  await saveUserProfile(profile);
   return profile;
 }
 
-export function addPersonalTraining(
+export async function addPersonalTraining(
   user: StoredUser,
   input: { title: string; category: string; text: string }
 ) {
-  const profile = getOrCreateProfile(user);
+  const profile = await getOrCreateProfile(user);
   const entry: AdminEntry = {
     id: `user-${user.id}-${Date.now()}`,
     title: input.title.trim(),
@@ -76,7 +74,7 @@ export function addPersonalTraining(
   };
   profile.personalTraining.unshift(entry);
   profile.updatedAt = new Date().toISOString();
-  saveUserProfile(profile);
+  await saveUserProfile(profile);
   return entry;
 }
 
@@ -110,30 +108,30 @@ export function profileToKnowledgeChunks(profile: UserProfile) {
   return chunks;
 }
 
-export function updateConnectedApps(user: StoredUser, connectedAppIds: string[]) {
-  const profile = getOrCreateProfile(user);
+export async function updateConnectedApps(user: StoredUser, connectedAppIds: string[]) {
+  const profile = await getOrCreateProfile(user);
   profile.connectedAppIds = connectedAppIds;
   profile.updatedAt = new Date().toISOString();
-  saveUserProfile(profile);
+  await saveUserProfile(profile);
   return profile;
 }
 
-export function updateAppSettings(
+export async function updateAppSettings(
   user: StoredUser,
   input: { weatherZip?: string; mode?: JudeMode; dockOrder?: string[] }
 ) {
-  const profile = getOrCreateProfile(user);
+  const profile = await getOrCreateProfile(user);
   profile.appSettings = {
     ...profile.appSettings,
     ...input,
   };
   profile.updatedAt = new Date().toISOString();
-  saveUserProfile(profile);
+  await saveUserProfile(profile);
   return profile;
 }
 
-export function setGmailIntegration(user: StoredUser, email: string) {
-  const profile = getOrCreateProfile(user);
+export async function setGmailIntegration(user: StoredUser, email: string) {
+  const profile = await getOrCreateProfile(user);
   profile.integrations.gmail = {
     email,
     connectedAt: profile.integrations.gmail?.connectedAt || new Date().toISOString(),
@@ -142,16 +140,16 @@ export function setGmailIntegration(user: StoredUser, email: string) {
     profile.connectedAppIds.push("gmail");
   }
   profile.updatedAt = new Date().toISOString();
-  saveUserProfile(profile);
+  await saveUserProfile(profile);
   return profile;
 }
 
-export function clearGmailIntegration(user: StoredUser) {
-  const profile = getOrCreateProfile(user);
+export async function clearGmailIntegration(user: StoredUser) {
+  const profile = await getOrCreateProfile(user);
   delete profile.integrations.gmail;
   profile.connectedAppIds = profile.connectedAppIds.filter((id) => id !== "gmail");
   profile.updatedAt = new Date().toISOString();
-  saveUserProfile(profile);
+  await saveUserProfile(profile);
   return profile;
 }
 
