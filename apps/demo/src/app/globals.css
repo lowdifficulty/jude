@@ -1,0 +1,59 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #0f0d0a;
+  color: #f5f0ea;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 60px 20px rgba(255, 180, 80, 0.35),
+      0 0 120px 40px rgba(255, 140, 40, 0.15),
+      inset 0 0 40px rgba(255, 220, 160, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 80px 30px rgba(255, 190, 90, 0.45),
+      0 0 160px 60px rgba(255, 150, 50, 0.2),
+      inset 0 0 50px rgba(255, 230, 180, 0.5);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
