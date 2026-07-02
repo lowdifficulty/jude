@@ -55,10 +55,17 @@ function extractAssistantText(message: Record<string, unknown>) {
   return "";
 }
 
+function configurePlaybackAudio(audio: HTMLAudioElement) {
+  audio.setAttribute("playsinline", "true");
+  audio.setAttribute("webkit-playsinline", "true");
+  audio.preload = "auto";
+}
+
 function unlockAudioPlayback() {
   const audio = new Audio();
   audio.src =
     "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+  configurePlaybackAudio(audio);
   audio.play().catch(() => {});
 }
 
@@ -129,6 +136,7 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
       }
 
       const audio = new Audio(url);
+      configurePlaybackAudio(audio);
       audioRef.current = audio;
 
       try {
@@ -231,7 +239,13 @@ export function useJudeVoice(options: UseJudeVoiceOptions = {}) {
     activeRef.current = true;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       if (!activeRef.current) {
         stream.getTracks().forEach((track) => track.stop());
         return;

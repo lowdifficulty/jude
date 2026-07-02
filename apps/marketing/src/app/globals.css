@@ -8,6 +8,8 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -16,6 +18,7 @@ body {
   background: #1a2e1f;
   color: #f5f0ea;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 a {
@@ -78,9 +81,44 @@ input {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 0.85rem max(1rem, env(safe-area-inset-right)) 0.85rem
+    max(1rem, env(safe-area-inset-left));
   max-width: 1100px;
   margin: 0 auto;
+  gap: 1rem;
+}
+
+.landing-nav-logo {
+  font-family: Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.landing-nav-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(245, 240, 234, 0.15);
+  border-radius: 12px;
+  background: rgba(245, 240, 234, 0.05);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.landing-nav-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: rgba(245, 240, 234, 0.85);
+  border-radius: 999px;
 }
 
 .landing-nav-links {
@@ -93,6 +131,17 @@ input {
   color: rgba(245, 240, 234, 0.65);
   font-size: 0.95rem;
   transition: color 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.landing-nav-cta {
+  padding: 0.5rem 1.25rem !important;
+  font-size: 0.9rem !important;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .landing-nav-links a:hover {
@@ -122,7 +171,8 @@ input {
 .section-inner {
   max-width: 1100px;
   margin: 0 auto;
-  padding: clamp(4rem, 8vw, 6rem) 2rem;
+  padding: clamp(3rem, 8vw, 6rem) max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
 }
 
 .section-label {
@@ -165,7 +215,10 @@ input {
 }
 
 .btn-primary {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   padding: 0.85rem 2rem;
   border-radius: 999px;
   background: linear-gradient(135deg, var(--gold-pale), var(--gold-light));
@@ -175,6 +228,8 @@ input {
   border: none;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-primary:hover {
@@ -183,13 +238,18 @@ input {
 }
 
 .btn-secondary {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   padding: 0.85rem 2rem;
   border-radius: 999px;
   border: 1px solid rgba(245, 240, 234, 0.25);
   color: rgba(245, 240, 234, 0.85);
   font-size: 0.95rem;
   transition: background 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-secondary:hover {
@@ -220,8 +280,40 @@ input {
     gap: 2.5rem;
   }
 
+  .landing-nav-toggle {
+    display: inline-flex;
+  }
+
   .landing-nav-links {
     display: none;
+    position: fixed;
+    inset: 0;
+    top: 64px;
+    z-index: 40;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 1rem max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom))
+      max(1rem, env(safe-area-inset-left));
+    background: rgba(26, 46, 31, 0.98);
+    backdrop-filter: blur(12px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .landing-nav-links--open {
+    display: flex;
+  }
+
+  .landing-nav-links a {
+    padding: 0.95rem 0.25rem;
+    font-size: 1.05rem;
+    border-bottom: 1px solid rgba(245, 240, 234, 0.08);
+  }
+
+  .landing-nav-cta {
+    margin-top: 0.75rem;
+    justify-content: center;
   }
 }
 
@@ -510,11 +602,13 @@ input {
 
 .register-form input {
   padding: 0.85rem 1rem;
+  min-height: 48px;
   border-radius: 12px;
   border: 1px solid rgba(245, 240, 234, 0.15);
   background: rgba(245, 240, 234, 0.05);
   color: #f5f0ea;
   outline: none;
+  font-size: 16px;
 }
 
 .register-form input:focus {
@@ -688,6 +782,27 @@ input {
 @media (max-width: 900px) {
   .site-footer-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .site-footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .benefit-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .benefit-hero-actions .btn-primary,
+  .benefit-hero-actions .btn-secondary {
+    width: 100%;
   }
 }
 

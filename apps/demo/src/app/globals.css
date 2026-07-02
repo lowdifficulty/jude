@@ -12,11 +12,17 @@ body {
   overflow: hidden;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   background: #0f0d0a;
   color: #f5f0ea;
+  overscroll-behavior: none;
 }
 
 @keyframes breathe {
@@ -55,5 +61,243 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.jude-shell {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    #2a2218 0%,
+    #1a1510 45%,
+    #0f0d0a 100%
+  );
+  display: flex;
+  flex-direction: column;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
+
+@media (min-width: 768px) {
+  .jude-shell {
+    padding:
+      max(24px, env(safe-area-inset-top))
+      max(32px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(32px, env(safe-area-inset-left));
+  }
+}
+
+.jude-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  animation: fade-in 0.8s ease-out;
+  flex-shrink: 0;
+}
+
+.jude-header-brand h1 {
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #f5f0ea;
+}
+
+.jude-header-brand p {
+  margin-top: 0.35rem;
+  font-weight: 300;
+  color: rgba(245, 240, 234, 0.75);
+}
+
+.jude-header-tagline {
+  font-size: clamp(0.95rem, 3.5vw, 1.35rem);
+}
+
+.jude-header-sub {
+  display: none;
+  font-size: clamp(0.72rem, 2.8vw, 0.95rem);
+  color: rgba(245, 240, 234, 0.4);
+}
+
+@media (min-width: 480px) {
+  .jude-header-sub {
+    display: block;
+  }
+}
+
+.jude-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgba(245, 240, 234, 0.7);
+  flex-shrink: 0;
+}
+
+.jude-clock {
+  font-size: clamp(0.95rem, 3.5vw, 1.25rem);
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.jude-settings-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 240, 234, 0.15);
+  background: rgba(245, 240, 234, 0.05);
+  color: rgba(245, 240, 234, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jude-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 2.5vw, 1.25rem);
+  padding: 0.5rem 0;
+}
+
+.jude-orb {
+  width: clamp(132px, 38vw, 260px);
+  height: clamp(132px, 38vw, 260px);
+  max-width: min(260px, 42vh);
+  max-height: min(260px, 42vh);
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(
+    circle at 40% 35%,
+    #fff8e8 0%,
+    #ffd080 30%,
+    #e8a040 60%,
+    #c07020 100%
+  );
+  animation: glow-pulse 4s ease-in-out infinite, breathe 6s ease-in-out infinite;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.jude-orb--active {
+  animation: glow-pulse 2s ease-in-out infinite, breathe 4s ease-in-out infinite;
+  box-shadow: 0 0 80px 24px rgba(255, 190, 90, 0.35);
+}
+
+.jude-hint {
+  font-size: clamp(0.85rem, 3.2vw, 1rem);
+  color: rgba(245, 240, 234, 0.55);
+  font-weight: 300;
+  text-align: center;
+  max-width: min(420px, 100%);
+  padding: 0 0.5rem;
+  line-height: 1.45;
+}
+
+.jude-end-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.6rem 1.15rem;
+  background: transparent;
+  border: 1px solid rgba(245, 240, 234, 0.2);
+  border-radius: 999px;
+  color: rgba(245, 240, 234, 0.65);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 300;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jude-caption {
+  font-size: clamp(0.8rem, 3vw, 0.95rem);
+  color: rgba(245, 240, 234, 0.45);
+  font-weight: 300;
+  text-align: center;
+  max-width: min(520px, 100%);
+  line-height: 1.5;
+  padding: 0 0.75rem;
+  max-height: 28vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.jude-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 2.5vw, 24px);
+  padding-top: clamp(12px, 2vw, 24px);
+  border-top: 1px solid rgba(245, 240, 234, 0.08);
+  animation: fade-in 1s ease-out 0.3s both;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .jude-status {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.jude-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: rgba(245, 240, 234, 0.55);
+  min-width: 0;
+}
+
+.jude-status-icon {
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.jude-status-label {
+  font-size: clamp(0.65rem, 2.5vw, 0.85rem);
+  font-weight: 400;
+  color: rgba(245, 240, 234, 0.45);
+}
+
+.jude-status-value {
+  font-size: clamp(0.78rem, 2.8vw, 1rem);
+  font-weight: 300;
+  color: rgba(245, 240, 234, 0.75);
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-height: 640px) {
+  .jude-main {
+    justify-content: flex-start;
+    padding-top: 0.25rem;
+  }
+
+  .jude-orb {
+    width: clamp(112px, 30vw, 180px);
+    height: clamp(112px, 30vw, 180px);
+  }
+
+  .jude-caption {
+    max-height: 18vh;
   }
 }
