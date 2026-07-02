@@ -5,6 +5,15 @@ import { parseJudeVoiceMode } from "@/lib/voice-profiles";
 
 export const runtime = "nodejs";
 
+function parseOpenAiError(body: string) {
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string } };
+    return parsed.error?.message || body.slice(0, 300);
+  } catch {
+    return body.slice(0, 300) || "OpenAI Realtime connection failed";
+  }
+}
+
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser();
   if (!user) {
@@ -25,17 +34,15 @@ export async function POST(request: Request) {
   }
 
   const mode = parseJudeVoiceMode(request.headers.get("x-jude-mode"));
+  const sessionJson = JSON.stringify(
+    getRealtimeSessionConfig(mode, {
+      gmailConnected: hasGmailTokens(user.id),
+    })
+  );
 
   const form = new FormData();
   form.set("sdp", sdp);
-  form.set(
-    "session",
-    JSON.stringify(
-      getRealtimeSessionConfig(mode, {
-        gmailConnected: hasGmailTokens(user.id),
-      })
-    )
-  );
+  form.set("session", new Blob([sessionJson], { type: "application/json" }));
 
   const response = await fetch("https://api.openai.com/v1/realtime/calls", {
     method: "POST",
@@ -48,14 +55,7 @@ export async function POST(request: Request) {
   const body = await response.text();
 
   if (!response.ok) {
-    let message = "OpenAI Realtime connection failed";
-    try {
-      const parsed = JSON.parse(body);
-      message = parsed.error?.message || message;
-    } catch {
-      if (body) message = body.slice(0, 300);
-    }
-    return NextResponse.json({ error: message }, { status: response.status });
+    return NextResponse.json({ error: parseOpenAiError(body) }, { status: response.status });
   }
 
   return new NextResponse(body, {

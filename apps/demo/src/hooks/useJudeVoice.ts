@@ -408,19 +408,47 @@ export function useJudeVoice(mode: JudeVoiceMode = "good", gmailConnected = fals
 
       if (!activeRef.current) return;
 
-      const sdpResponse = await fetch("/api/voice/connect", {
+      const sessionResponse = await fetch("/api/voice/session", {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/sdp",
           "X-Jude-Mode": modeRef.current,
         },
-        body: pc.localDescription?.sdp || offer.sdp,
+      });
+
+      if (!sessionResponse.ok) {
+        const data = await sessionResponse.json().catch(() => ({}));
+        throw new Error(data.error || "Could not start voice session.");
+      }
+
+      const sessionData = (await sessionResponse.json()) as {
+        value?: string;
+        client_secret?: { value?: string };
+      };
+      const ephemeralKey = sessionData.value || sessionData.client_secret?.value;
+      if (!ephemeralKey) {
+        throw new Error("Voice session token was missing from the server.");
+      }
+
+      const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${ephemeralKey}`,
+          "Content-Type": "application/sdp",
+        },
+        body: pc.localDescription?.sdp || offer.sdp || "",
       });
 
       if (!sdpResponse.ok) {
-        const data = await sdpResponse.json().catch(() => ({}));
-        throw new Error(data.error || "Could not connect to OpenAI Realtime.");
+        const errorText = await sdpResponse.text();
+        let message = "Could not connect to OpenAI Realtime.";
+        try {
+          const parsed = JSON.parse(errorText) as { error?: { message?: string } };
+          message = parsed.error?.message || message;
+        } catch {
+          if (errorText) message = errorText.slice(0, 300);
+        }
+        throw new Error(message);
       }
 
       const answerSdp = await sdpResponse.text();
