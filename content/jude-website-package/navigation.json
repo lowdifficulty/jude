@@ -1,0 +1,57 @@
+{
+  "primary": [
+    {
+      "label": "Home",
+      "href": "/"
+    },
+    {
+      "label": "Home",
+      "href": "/home-benefits/"
+    },
+    {
+      "label": "Health",
+      "href": "/health-check-ins/"
+    },
+    {
+      "label": "Happiness",
+      "href": "/companionship-and-loneliness/"
+    },
+    {
+      "label": "Family",
+      "href": "/caregiver-peace-of-mind/"
+    },
+    {
+      "label": "Why Jude",
+      "href": "/why-jude-is-different/"
+    }
+  ],
+  "footer_groups": {
+    "Home": [
+      "Smart Home Control",
+      "Home Safety and Security",
+      "Home Maintenance",
+      "Daily Routines"
+    ],
+    "Health": [
+      "Medication Reminders",
+      "Health Check-Ins",
+      "Chronic Condition Support",
+      "Remote Patient Monitoring",
+      "Telehealth and Doctor Visits"
+    ],
+    "Happiness": [
+      "Family Connection",
+      "Companionship and Loneliness",
+      "Entertainment and Happiness",
+      "Spiritual and Community Life",
+      "Pet Care Support"
+    ],
+    "Family": [
+      "Caregiver Peace of Mind",
+      "The Family Dashboard",
+      "Aging in Place",
+      "Dementia and Memory Support",
+      "Fraud and Scam Protection"
+    ]
+  }
+}

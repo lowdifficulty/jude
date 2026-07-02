@@ -14,12 +14,36 @@ A wall-mounted home AI that's a member of the family.
 | **67** | Start local dev server (or reset if blank) |
 | **42** | Push to GitHub and deploy to Vercel production |
 
+## Voice (jude.one demo)
+
+OpenAI Realtime + RAG + ElevenLabs. See [VOICE.md](./VOICE.md).
+
+```bash
+cp apps/demo/.env.example apps/demo/.env.local
+# add OPENAI_API_KEY and ELEVENLABS_API_KEY
+npm run build:knowledge
+npm run dev:demo
+```
+
+Tap the orange orb at http://localhost:3002 to talk to Jude.
+
+## Content pages (urjude.com)
+
+37 benefit pages from `content/jude-website-package/` — e.g. `/medication-reminders`, `/why-jude-is-different`.
+
+After editing content:
+
+```bash
+npm run build:site-data
+npm run build:knowledge
+```
+
 ## Local development
 
 ```bash
 npm install
 
-# Demo interface (jude.one) — http://localhost:3000
+# Demo interface (jude.one) — http://localhost:3002
 npm run dev:demo
 
 # Marketing site (urjude.com) — http://localhost:3001

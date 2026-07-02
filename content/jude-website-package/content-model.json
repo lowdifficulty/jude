@@ -1,0 +1,277 @@
+{
+  "brand": {
+    "name": "Jude",
+    "tagline": "Home, Health, and Happiness on the wall.",
+    "positioning": "A warm, wall-mounted AI companion that helps older adults live safer, healthier, and happier at home while giving families peace of mind.",
+    "tone": "Apple-inspired clarity with less sleekness and more Southern charm: calm, confident, neighborly, warm, practical, family-first, porch-light friendly.",
+    "voice_rules": [
+      "Use short, confident headlines.",
+      "Make each section feel like a product benefit, not a technical feature list.",
+      "Talk about dignity, independence, family, home, and comfort.",
+      "Avoid scary surveillance language; use supportive language like check-ins, gentle reminders, and peace of mind.",
+      "Avoid making medical claims; say supports, reminds, helps, encourages, or coordinates.",
+      "Use plain English for adult children researching help for aging parents."
+    ]
+  },
+  "pages": [
+    {
+      "title": "Aging in Place",
+      "slug": "/aging-in-place/",
+      "primary_keyword": "AI for aging in place",
+      "meta_description": "See how Jude helps older adults stay independent at home with daily support, family connection, safety check-ins, and simple wall-mounted AI.",
+      "audience": "Adult children, seniors, caregivers"
+    },
+    {
+      "title": "Medication Reminders",
+      "slug": "/medication-reminders/",
+      "primary_keyword": "AI medication reminders for seniors",
+      "meta_description": "Jude helps seniors remember medications, confirm doses, track refills, and keep caregivers informed when routines are missed.",
+      "audience": "Families managing parent medications"
+    },
+    {
+      "title": "Fall Prevention and Emergency Help",
+      "slug": "/fall-prevention-and-emergency-help/",
+      "primary_keyword": "fall prevention AI for seniors",
+      "meta_description": "Explore how Jude supports safer movement, emergency voice help, nighttime lighting, fall-risk routines, and family alerts for seniors at home.",
+      "audience": "Families worried about falls"
+    },
+    {
+      "title": "Smart Home Control",
+      "slug": "/smart-home-control/",
+      "primary_keyword": "smart home assistant for elderly",
+      "meta_description": "Jude makes smart home technology easier for seniors with voice control for lights, locks, thermostat, cameras, reminders, and safety routines.",
+      "audience": "Seniors and families simplifying smart homes"
+    },
+    {
+      "title": "Family Connection",
+      "slug": "/family-connection/",
+      "primary_keyword": "AI companion for elderly family connection",
+      "meta_description": "Jude helps seniors stay close to family with video calls, photo sharing, voice messages, shared calendars, and simple family check-ins.",
+      "audience": "Families wanting more connection"
+    },
+    {
+      "title": "Caregiver Peace of Mind",
+      "slug": "/caregiver-peace-of-mind/",
+      "primary_keyword": "caregiver peace of mind technology",
+      "meta_description": "Jude gives families and caregivers better daily visibility with check-ins, routine updates, missed-reminder alerts, and simple care coordination.",
+      "audience": "Adult children and care teams"
+    },
+    {
+      "title": "Dementia and Memory Support",
+      "slug": "/dementia-and-memory-support/",
+      "primary_keyword": "AI memory support for seniors",
+      "meta_description": "Jude supports seniors with memory loss through orientation prompts, repeated-question support, routine reminders, reassurance, and family alerts.",
+      "audience": "Families supporting memory decline"
+    },
+    {
+      "title": "Health Check-Ins",
+      "slug": "/health-check-ins/",
+      "primary_keyword": "senior health check in AI",
+      "meta_description": "Jude can support daily health check-ins for pain, sleep, hydration, appetite, mood, dizziness, movement, and symptom trends.",
+      "audience": "Families tracking daily wellness"
+    },
+    {
+      "title": "Chronic Condition Support",
+      "slug": "/chronic-condition-support/",
+      "primary_keyword": "AI support for senior chronic conditions",
+      "meta_description": "Jude helps seniors manage daily routines around blood pressure, diabetes, heart health, COPD, arthritis, mobility, and recovery support.",
+      "audience": "Families managing chronic care routines"
+    },
+    {
+      "title": "Nutrition and Hydration",
+      "slug": "/nutrition-and-hydration/",
+      "primary_keyword": "nutrition reminders for elderly",
+      "meta_description": "Jude supports healthier daily routines with meal reminders, hydration prompts, grocery lists, simple recipes, and family visibility around skipped meals.",
+      "audience": "Families worried about eating and drinking"
+    },
+    {
+      "title": "Sleep and Nighttime Support",
+      "slug": "/sleep-and-nighttime-support/",
+      "primary_keyword": "nighttime support for seniors at home",
+      "meta_description": "Jude helps seniors feel safer at night with bedtime routines, soft lighting, lock checks, calming audio, and nighttime caregiver alerts.",
+      "audience": "Families worried about nighttime safety"
+    },
+    {
+      "title": "Companionship and Loneliness",
+      "slug": "/companionship-and-loneliness/",
+      "primary_keyword": "AI companion for elderly loneliness",
+      "meta_description": "Jude helps reduce loneliness with conversation, music, memories, family messages, jokes, stories, daily greetings, and emotional check-ins.",
+      "audience": "Families worried about isolation"
+    },
+    {
+      "title": "Telehealth and Doctor Visits",
+      "slug": "/telehealth-and-doctor-visits/",
+      "primary_keyword": "telehealth support for elderly",
+      "meta_description": "Jude helps seniors prepare for doctor visits, join telehealth appointments, remember care instructions, and share health summaries with family.",
+      "audience": "Families coordinating healthcare"
+    },
+    {
+      "title": "Home Safety and Security",
+      "slug": "/home-safety-and-security/",
+      "primary_keyword": "home safety technology for seniors",
+      "meta_description": "Jude supports home safety with door checks, lock reminders, smoke and carbon monoxide alerts, doorbell cameras, water leak alerts, and emergency contacts.",
+      "audience": "Families securing senior homes"
+    },
+    {
+      "title": "Fraud and Scam Protection",
+      "slug": "/fraud-and-scam-protection/",
+      "primary_keyword": "scam protection for seniors AI",
+      "meta_description": "Jude can help seniors slow down suspicious calls, texts, emails, payment requests, and common scams by encouraging family confirmation.",
+      "audience": "Families worried about elder scams"
+    },
+    {
+      "title": "Daily Routines",
+      "slug": "/daily-routines/",
+      "primary_keyword": "daily routine assistant for seniors",
+      "meta_description": "Jude helps seniors move through the day with morning, meal, medication, appointment, chore, pet care, and bedtime routines.",
+      "audience": "Seniors needing daily structure"
+    },
+    {
+      "title": "Transportation and Appointments",
+      "slug": "/transportation-and-appointments/",
+      "primary_keyword": "appointment reminders for elderly transportation",
+      "meta_description": "Jude helps seniors remember appointments, know when to leave, coordinate rides, prepare questions, and notify family when transportation is needed.",
+      "audience": "Families coordinating rides and appointments"
+    },
+    {
+      "title": "Remote Patient Monitoring",
+      "slug": "/remote-patient-monitoring/",
+      "primary_keyword": "remote patient monitoring for seniors at home",
+      "meta_description": "Jude can support remote patient monitoring by helping seniors collect readings, remember checks, and share trends with caregivers or providers.",
+      "audience": "Care teams and families"
+    },
+    {
+      "title": "Home Maintenance",
+      "slug": "/home-maintenance/",
+      "primary_keyword": "home maintenance reminders for seniors",
+      "meta_description": "Jude helps seniors and families stay ahead of household tasks like filters, batteries, trash day, leaks, bills, mail, and appliance reminders.",
+      "audience": "Families managing home upkeep"
+    },
+    {
+      "title": "Spiritual and Community Life",
+      "slug": "/spiritual-and-community-life/",
+      "primary_keyword": "senior community connection assistant",
+      "meta_description": "Jude helps seniors stay connected to church, community events, hobbies, friends, local programs, and meaningful routines.",
+      "audience": "Seniors and families valuing community"
+    },
+    {
+      "title": "Pet Care Support",
+      "slug": "/pet-care-support/",
+      "primary_keyword": "pet care reminders for elderly",
+      "meta_description": "Jude helps seniors care for pets with feeding reminders, walking prompts, medication schedules, vet appointments, and family updates.",
+      "audience": "Pet-loving seniors and families"
+    },
+    {
+      "title": "Design and Wall-Mounted Benefits",
+      "slug": "/design-and-wall-mounted-benefits/",
+      "primary_keyword": "wall mounted AI for seniors",
+      "meta_description": "Why Jude is wall-mounted: always visible, always powered, easy to read, hard to misplace, voice-first, and designed to blend into the home.",
+      "audience": "Buyers comparing devices"
+    },
+    {
+      "title": "Entertainment and Happiness",
+      "slug": "/entertainment-and-happiness/",
+      "primary_keyword": "elderly entertainment AI companion",
+      "meta_description": "Jude brings joy into the day with music, stories, radio, games, audiobooks, jokes, family photos, and personalized greetings.",
+      "audience": "Families improving quality of life"
+    },
+    {
+      "title": "Privacy and Trust",
+      "slug": "/privacy-and-trust/",
+      "primary_keyword": "private AI assistant for seniors",
+      "meta_description": "Jude should be built around trust, consent, approved contacts, clear privacy settings, meaningful alerts, and respectful support for seniors.",
+      "audience": "Families concerned about privacy"
+    },
+    {
+      "title": "The Family Dashboard",
+      "slug": "/the-family-dashboard/",
+      "primary_keyword": "family dashboard for elderly care",
+      "meta_description": "Jude\u2019s family dashboard can help adult children view reminders, check-ins, appointments, caregiver notes, alerts, and daily routines in one place.",
+      "audience": "Adult children managing care"
+    },
+    {
+      "title": "Why Jude Is Different",
+      "slug": "/why-jude-is-different/",
+      "primary_keyword": "best AI companion for seniors at home",
+      "meta_description": "Jude combines a wall-mounted screen, AI companionship, smart home control, health routines, family connection, and caregiver peace of mind.",
+      "audience": "Buyers comparing alternatives"
+    },
+    {
+      "title": "Voice Assistant for Elderly Parents",
+      "slug": "/voice-assistant-for-elderly-parents/",
+      "primary_keyword": "voice assistant for elderly parents",
+      "meta_description": "Jude gives elderly parents a simple voice-first way to ask for help, call family, manage routines, and control the home from a wall-mounted screen.",
+      "audience": "Adult children buying for parents"
+    },
+    {
+      "title": "AI for Elderly Living Alone",
+      "slug": "/ai-for-elderly-living-alone/",
+      "primary_keyword": "AI for elderly living alone",
+      "meta_description": "Jude supports elderly people living alone with daily check-ins, safety reminders, family calls, emergency help, routines, and companionship.",
+      "audience": "Families of seniors living alone"
+    },
+    {
+      "title": "Senior-Friendly Technology",
+      "slug": "/senior-friendly-technology/",
+      "primary_keyword": "senior friendly technology for home",
+      "meta_description": "Jude makes technology senior-friendly with a wall-mounted screen, voice-first controls, large text, simple routines, and warm family-centered design.",
+      "audience": "Technology-hesitant seniors and families"
+    },
+    {
+      "title": "Home Benefits",
+      "slug": "/home-benefits/",
+      "primary_keyword": "AI home assistant for seniors",
+      "meta_description": "Explore Jude\u2019s home benefits for seniors, including smart home control, safety routines, door checks, lighting, home maintenance, and daily reminders.",
+      "audience": "Seniors, adult children, caregivers"
+    },
+    {
+      "title": "Health Benefits",
+      "slug": "/health-benefits/",
+      "primary_keyword": "AI health assistant for seniors",
+      "meta_description": "Jude supports senior health routines with medication reminders, hydration, meals, symptom notes, chronic condition routines, telehealth, and caregiver updates.",
+      "audience": "Families supporting senior health routines"
+    },
+    {
+      "title": "Happiness Benefits",
+      "slug": "/happiness-benefits/",
+      "primary_keyword": "AI companion for elderly happiness",
+      "meta_description": "Jude supports senior happiness through family connection, music, memories, photos, hobbies, community reminders, conversation, and companionship.",
+      "audience": "Families focused on quality of life"
+    },
+    {
+      "title": "Family Benefits",
+      "slug": "/family-benefits/",
+      "primary_keyword": "elderly care AI for families",
+      "meta_description": "Jude helps families care for elderly parents with peace of mind, daily summaries, missed routine alerts, caregiver notes, emergency escalation, and shared calendars.",
+      "audience": "Adult children and family caregivers"
+    },
+    {
+      "title": "Emergency Response",
+      "slug": "/emergency-response/",
+      "primary_keyword": "emergency response for seniors at home",
+      "meta_description": "Jude can help seniors ask for emergency help by voice, contact approved family members, escalate urgent situations, and support safer response at home.",
+      "audience": "Families worried about emergencies"
+    },
+    {
+      "title": "Communication Benefits",
+      "slug": "/communication-benefits/",
+      "primary_keyword": "communication assistant for elderly",
+      "meta_description": "Jude helps elderly adults communicate with family, caregivers, doctors, friends, and neighbors using voice calls, video calls, messages, and shared updates.",
+      "audience": "Seniors and families"
+    },
+    {
+      "title": "Mobility and Exercise Support",
+      "slug": "/mobility-and-exercise-support/",
+      "primary_keyword": "mobility reminders for seniors",
+      "meta_description": "Jude supports senior mobility with gentle movement reminders, chair exercises, stretching prompts, walker reminders, balance routines, and fall-risk support.",
+      "audience": "Families supporting mobility"
+    },
+    {
+      "title": "Reading and Technology Help",
+      "slug": "/reading-and-technology-help/",
+      "primary_keyword": "technology help for elderly at home",
+      "meta_description": "Jude helps seniors read messages, understand alerts, magnify text, explain forms, spot suspicious messages, and use technology in plain English.",
+      "audience": "Technology-hesitant seniors"
+    }
+  ]
+}

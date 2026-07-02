@@ -11,6 +11,8 @@
     "build:demo": "npm run build --workspace=@jude/demo",
     "build:marketing": "npm run build --workspace=@jude/marketing",
     "build": "npm run build:demo && npm run build:marketing",
+    "build:knowledge": "node scripts/build-knowledge-index.mjs",
+    "build:site-data": "node scripts/generate-site-data.mjs",
     "67": "npm run dev:demo",
     "42": "node scripts/deploy.js"
   }

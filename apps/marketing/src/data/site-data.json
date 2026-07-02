@@ -1,0 +1,369 @@
+{
+  "navigation": {
+    "primary": [
+      {
+        "label": "Home",
+        "href": "/"
+      },
+      {
+        "label": "Home",
+        "href": "/home-benefits/"
+      },
+      {
+        "label": "Health",
+        "href": "/health-check-ins/"
+      },
+      {
+        "label": "Happiness",
+        "href": "/companionship-and-loneliness/"
+      },
+      {
+        "label": "Family",
+        "href": "/caregiver-peace-of-mind/"
+      },
+      {
+        "label": "Why Jude",
+        "href": "/why-jude-is-different/"
+      }
+    ],
+    "footer_groups": {
+      "Home": [
+        "Smart Home Control",
+        "Home Safety and Security",
+        "Home Maintenance",
+        "Daily Routines"
+      ],
+      "Health": [
+        "Medication Reminders",
+        "Health Check-Ins",
+        "Chronic Condition Support",
+        "Remote Patient Monitoring",
+        "Telehealth and Doctor Visits"
+      ],
+      "Happiness": [
+        "Family Connection",
+        "Companionship and Loneliness",
+        "Entertainment and Happiness",
+        "Spiritual and Community Life",
+        "Pet Care Support"
+      ],
+      "Family": [
+        "Caregiver Peace of Mind",
+        "The Family Dashboard",
+        "Aging in Place",
+        "Dementia and Memory Support",
+        "Fraud and Scam Protection"
+      ]
+    }
+  },
+  "pages": [
+    {
+      "slug": "aging-in-place",
+      "title": "Aging in Place",
+      "metaTitle": "Aging in Place | Jude",
+      "metaDescription": "See how Jude helps older adults stay independent at home with daily support, family connection, safety check-ins, and simple wall-mounted AI."
+    },
+    {
+      "slug": "ai-for-elderly-living-alone",
+      "title": "AI for Elderly Living Alone",
+      "metaTitle": "AI for Elderly Living Alone | Jude",
+      "metaDescription": "Jude supports elderly people living alone with daily check-ins, safety reminders, family calls, emergency help, routines, and companionship."
+    },
+    {
+      "slug": "caregiver-peace-of-mind",
+      "title": "Caregiver Peace of Mind",
+      "metaTitle": "Caregiver Peace of Mind | Jude",
+      "metaDescription": "Jude gives families and caregivers better daily visibility with check-ins, routine updates, missed-reminder alerts, and simple care coordination."
+    },
+    {
+      "slug": "chronic-condition-support",
+      "title": "Chronic Condition Support",
+      "metaTitle": "Chronic Condition Support | Jude",
+      "metaDescription": "Jude helps seniors manage daily routines around blood pressure, diabetes, heart health, COPD, arthritis, mobility, and recovery support."
+    },
+    {
+      "slug": "communication-benefits",
+      "title": "Communication Benefits",
+      "metaTitle": "Communication Benefits | Jude",
+      "metaDescription": "Jude helps elderly adults communicate with family, caregivers, doctors, friends, and neighbors using voice calls, video calls, messages, and shared updates."
+    },
+    {
+      "slug": "companionship-and-loneliness",
+      "title": "Companionship and Loneliness",
+      "metaTitle": "Companionship and Loneliness | Jude",
+      "metaDescription": "Jude helps reduce loneliness with conversation, music, memories, family messages, jokes, stories, daily greetings, and emotional check-ins."
+    },
+    {
+      "slug": "daily-routines",
+      "title": "Daily Routines",
+      "metaTitle": "Daily Routines | Jude",
+      "metaDescription": "Jude helps seniors move through the day with morning, meal, medication, appointment, chore, pet care, and bedtime routines."
+    },
+    {
+      "slug": "dementia-and-memory-support",
+      "title": "Dementia and Memory Support",
+      "metaTitle": "Dementia and Memory Support | Jude",
+      "metaDescription": "Jude supports seniors with memory loss through orientation prompts, repeated-question support, routine reminders, reassurance, and family alerts."
+    },
+    {
+      "slug": "design-and-wall-mounted-benefits",
+      "title": "Design and Wall-Mounted Benefits",
+      "metaTitle": "Design and Wall-Mounted Benefits | Jude",
+      "metaDescription": "Why Jude is wall-mounted: always visible, always powered, easy to read, hard to misplace, voice-first, and designed to blend into the home."
+    },
+    {
+      "slug": "emergency-response",
+      "title": "Emergency Response",
+      "metaTitle": "Emergency Response | Jude",
+      "metaDescription": "Jude can help seniors ask for emergency help by voice, contact approved family members, escalate urgent situations, and support safer response at home."
+    },
+    {
+      "slug": "entertainment-and-happiness",
+      "title": "Entertainment and Happiness",
+      "metaTitle": "Entertainment and Happiness | Jude",
+      "metaDescription": "Jude brings joy into the day with music, stories, radio, games, audiobooks, jokes, family photos, and personalized greetings."
+    },
+    {
+      "slug": "fall-prevention-and-emergency-help",
+      "title": "Fall Prevention and Emergency Help",
+      "metaTitle": "Fall Prevention and Emergency Help | Jude",
+      "metaDescription": "Explore how Jude supports safer movement, emergency voice help, nighttime lighting, fall-risk routines, and family alerts for seniors at home."
+    },
+    {
+      "slug": "family-benefits",
+      "title": "Family Benefits",
+      "metaTitle": "Family Benefits | Jude",
+      "metaDescription": "Jude helps families care for elderly parents with peace of mind, daily summaries, missed routine alerts, caregiver notes, emergency escalation, and shared calendars."
+    },
+    {
+      "slug": "family-connection",
+      "title": "Family Connection",
+      "metaTitle": "Family Connection | Jude",
+      "metaDescription": "Jude helps seniors stay close to family with video calls, photo sharing, voice messages, shared calendars, and simple family check-ins."
+    },
+    {
+      "slug": "fraud-and-scam-protection",
+      "title": "Fraud and Scam Protection",
+      "metaTitle": "Fraud and Scam Protection | Jude",
+      "metaDescription": "Jude can help seniors slow down suspicious calls, texts, emails, payment requests, and common scams by encouraging family confirmation."
+    },
+    {
+      "slug": "happiness-benefits",
+      "title": "Happiness Benefits",
+      "metaTitle": "Happiness Benefits | Jude",
+      "metaDescription": "Jude supports senior happiness through family connection, music, memories, photos, hobbies, community reminders, conversation, and companionship."
+    },
+    {
+      "slug": "health-benefits",
+      "title": "Health Benefits",
+      "metaTitle": "Health Benefits | Jude",
+      "metaDescription": "Jude supports senior health routines with medication reminders, hydration, meals, symptom notes, chronic condition routines, telehealth, and caregiver updates."
+    },
+    {
+      "slug": "health-check-ins",
+      "title": "Health Check-Ins",
+      "metaTitle": "Health Check-Ins | Jude",
+      "metaDescription": "Jude can support daily health check-ins for pain, sleep, hydration, appetite, mood, dizziness, movement, and symptom trends."
+    },
+    {
+      "slug": "home-benefits",
+      "title": "Home Benefits",
+      "metaTitle": "Home Benefits | Jude",
+      "metaDescription": "Explore Jude’s home benefits for seniors, including smart home control, safety routines, door checks, lighting, home maintenance, and daily reminders."
+    },
+    {
+      "slug": "home-maintenance",
+      "title": "Home Maintenance",
+      "metaTitle": "Home Maintenance | Jude",
+      "metaDescription": "Jude helps seniors and families stay ahead of household tasks like filters, batteries, trash day, leaks, bills, mail, and appliance reminders."
+    },
+    {
+      "slug": "home-safety-and-security",
+      "title": "Home Safety and Security",
+      "metaTitle": "Home Safety and Security | Jude",
+      "metaDescription": "Jude supports home safety with door checks, lock reminders, smoke and carbon monoxide alerts, doorbell cameras, water leak alerts, and emergency contacts."
+    },
+    {
+      "slug": "medication-reminders",
+      "title": "Medication Reminders",
+      "metaTitle": "Medication Reminders | Jude",
+      "metaDescription": "Jude helps seniors remember medications, confirm doses, track refills, and keep caregivers informed when routines are missed."
+    },
+    {
+      "slug": "mobility-and-exercise-support",
+      "title": "Mobility and Exercise Support",
+      "metaTitle": "Mobility and Exercise Support | Jude",
+      "metaDescription": "Jude supports senior mobility with gentle movement reminders, chair exercises, stretching prompts, walker reminders, balance routines, and fall-risk support."
+    },
+    {
+      "slug": "nutrition-and-hydration",
+      "title": "Nutrition and Hydration",
+      "metaTitle": "Nutrition and Hydration | Jude",
+      "metaDescription": "Jude supports healthier daily routines with meal reminders, hydration prompts, grocery lists, simple recipes, and family visibility around skipped meals."
+    },
+    {
+      "slug": "pet-care-support",
+      "title": "Pet Care Support",
+      "metaTitle": "Pet Care Support | Jude",
+      "metaDescription": "Jude helps seniors care for pets with feeding reminders, walking prompts, medication schedules, vet appointments, and family updates."
+    },
+    {
+      "slug": "privacy-and-trust",
+      "title": "Privacy and Trust",
+      "metaTitle": "Privacy and Trust | Jude",
+      "metaDescription": "Jude should be built around trust, consent, approved contacts, clear privacy settings, meaningful alerts, and respectful support for seniors."
+    },
+    {
+      "slug": "reading-and-technology-help",
+      "title": "Reading and Technology Help",
+      "metaTitle": "Reading and Technology Help | Jude",
+      "metaDescription": "Jude helps seniors read messages, understand alerts, magnify text, explain forms, spot suspicious messages, and use technology in plain English."
+    },
+    {
+      "slug": "remote-patient-monitoring",
+      "title": "Remote Patient Monitoring",
+      "metaTitle": "Remote Patient Monitoring | Jude",
+      "metaDescription": "Jude can support remote patient monitoring by helping seniors collect readings, remember checks, and share trends with caregivers or providers."
+    },
+    {
+      "slug": "senior-friendly-technology",
+      "title": "Senior-Friendly Technology",
+      "metaTitle": "Senior-Friendly Technology | Jude",
+      "metaDescription": "Jude makes technology senior-friendly with a wall-mounted screen, voice-first controls, large text, simple routines, and warm family-centered design."
+    },
+    {
+      "slug": "sleep-and-nighttime-support",
+      "title": "Sleep and Nighttime Support",
+      "metaTitle": "Sleep and Nighttime Support | Jude",
+      "metaDescription": "Jude helps seniors feel safer at night with bedtime routines, soft lighting, lock checks, calming audio, and nighttime caregiver alerts."
+    },
+    {
+      "slug": "smart-home-control",
+      "title": "Smart Home Control",
+      "metaTitle": "Smart Home Control | Jude",
+      "metaDescription": "Jude makes smart home technology easier for seniors with voice control for lights, locks, thermostat, cameras, reminders, and safety routines."
+    },
+    {
+      "slug": "spiritual-and-community-life",
+      "title": "Spiritual and Community Life",
+      "metaTitle": "Spiritual and Community Life | Jude",
+      "metaDescription": "Jude helps seniors stay connected to church, community events, hobbies, friends, local programs, and meaningful routines."
+    },
+    {
+      "slug": "telehealth-and-doctor-visits",
+      "title": "Telehealth and Doctor Visits",
+      "metaTitle": "Telehealth and Doctor Visits | Jude",
+      "metaDescription": "Jude helps seniors prepare for doctor visits, join telehealth appointments, remember care instructions, and share health summaries with family."
+    },
+    {
+      "slug": "the-family-dashboard",
+      "title": "The Family Dashboard",
+      "metaTitle": "The Family Dashboard | Jude",
+      "metaDescription": "Jude’s family dashboard can help adult children view reminders, check-ins, appointments, caregiver notes, alerts, and daily routines in one place."
+    },
+    {
+      "slug": "transportation-and-appointments",
+      "title": "Transportation and Appointments",
+      "metaTitle": "Transportation and Appointments | Jude",
+      "metaDescription": "Jude helps seniors remember appointments, know when to leave, coordinate rides, prepare questions, and notify family when transportation is needed."
+    },
+    {
+      "slug": "voice-assistant-for-elderly-parents",
+      "title": "Voice Assistant for Elderly Parents",
+      "metaTitle": "Voice Assistant for Elderly Parents | Jude",
+      "metaDescription": "Jude gives elderly parents a simple voice-first way to ask for help, call family, manage routines, and control the home from a wall-mounted screen."
+    },
+    {
+      "slug": "why-jude-is-different",
+      "title": "Why Jude Is Different",
+      "metaTitle": "Why Jude Is Different | Jude",
+      "metaDescription": "Jude combines a wall-mounted screen, AI companionship, smart home control, health routines, family connection, and caregiver peace of mind."
+    }
+  ],
+  "footerGroups": {
+    "Home": [
+      {
+        "label": "Smart Home Control",
+        "href": "/smart-home-control"
+      },
+      {
+        "label": "Home Safety and Security",
+        "href": "/home-safety-and-security"
+      },
+      {
+        "label": "Home Maintenance",
+        "href": "/home-maintenance"
+      },
+      {
+        "label": "Daily Routines",
+        "href": "/daily-routines"
+      }
+    ],
+    "Health": [
+      {
+        "label": "Medication Reminders",
+        "href": "/medication-reminders"
+      },
+      {
+        "label": "Health Check-Ins",
+        "href": "/health-check-ins"
+      },
+      {
+        "label": "Chronic Condition Support",
+        "href": "/chronic-condition-support"
+      },
+      {
+        "label": "Remote Patient Monitoring",
+        "href": "/remote-patient-monitoring"
+      },
+      {
+        "label": "Telehealth and Doctor Visits",
+        "href": "/telehealth-and-doctor-visits"
+      }
+    ],
+    "Happiness": [
+      {
+        "label": "Family Connection",
+        "href": "/family-connection"
+      },
+      {
+        "label": "Companionship and Loneliness",
+        "href": "/companionship-and-loneliness"
+      },
+      {
+        "label": "Entertainment and Happiness",
+        "href": "/entertainment-and-happiness"
+      },
+      {
+        "label": "Spiritual and Community Life",
+        "href": "/spiritual-and-community-life"
+      },
+      {
+        "label": "Pet Care Support",
+        "href": "/pet-care-support"
+      }
+    ],
+    "Family": [
+      {
+        "label": "Caregiver Peace of Mind",
+        "href": "/caregiver-peace-of-mind"
+      },
+      {
+        "label": "The Family Dashboard",
+        "href": "/the-family-dashboard"
+      },
+      {
+        "label": "Aging in Place",
+        "href": "/aging-in-place"
+      },
+      {
+        "label": "Dementia and Memory Support",
+        "href": "/dementia-and-memory-support"
+      },
+      {
+        "label": "Fraud and Scam Protection",
+        "href": "/fraud-and-scam-protection"
+      }
+    ]
+  }
+}

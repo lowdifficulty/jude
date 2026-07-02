@@ -6,27 +6,27 @@ Add these records in GoDaddy DNS for each domain. Vercel handles SSL automatical
 
 ## jude.one
 
+Vercel project: **jude-demo** · Preview: https://jude-demo.vercel.app
+
 | Type | Name | Value | TTL |
 |------|------|-------|-----|
 | **A** | `@` | `76.76.21.21` | 600 (or default) |
-| **CNAME** | `www` | `cname.vercel-dns.com` | 600 (or default) |
+| **A** | `www` | `76.76.21.21` | 600 (or default) |
 
-In Vercel project **jude-demo** (or your demo project name), add domains:
-- `jude.one`
-- `www.jude.one`
+Domains already added in Vercel: `jude.one`, `www.jude.one`
 
 ---
 
 ## urjude.com
 
+Vercel project: **jude-marketing** · Preview: https://jude-marketing.vercel.app
+
 | Type | Name | Value | TTL |
 |------|------|-------|-----|
 | **A** | `@` | `76.76.21.21` | 600 (or default) |
-| **CNAME** | `www` | `cname.vercel-dns.com` | 600 (or default) |
+| **A** | `www` | `76.76.21.21` | 600 (or default) |
 
-In Vercel project **jude-marketing** (or your marketing project name), add domains:
-- `urjude.com`
-- `www.urjude.com`
+Domains already added in Vercel: `urjude.com`, `www.urjude.com`
 
 ---
 

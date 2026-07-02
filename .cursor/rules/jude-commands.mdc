@@ -10,7 +10,7 @@ When the user sends only a number or uses these codes in context:
 | Code | Action |
 |------|--------|
 | **42** | Push to GitHub (`main`) and deploy both apps to Vercel production (`apps/demo` → jude.one, `apps/marketing` → urjude.com). Run `npm run 42` from repo root. |
-| **67** | Start or restart local dev. Run `npm run dev:demo` (port 3000, jude.one demo). If the screen is blank after changes, kill the dev server and run 67 again. Marketing site: `npm run dev:marketing` (port 3001). |
+| **67** | Start or restart local dev. Run `npm run dev:demo` (port 3002, jude.one demo). If the screen is blank after changes, kill the dev server and run 67 again. Marketing site: `npm run dev:marketing` (port 3001). |
 
 ## Project layout
 

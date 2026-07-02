@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useJudeVoice } from "@/hooks/useJudeVoice";
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("en-US", {
@@ -58,6 +59,12 @@ const statusItems = [
 
 export function JudeInterface() {
   const [time, setTime] = useState<string>("");
+  const [caption, setCaption] = useState<string>("");
+  const { state, error, isActive, start, stop } = useJudeVoice({
+    onTranscript: (text, role) => {
+      if (role === "assistant") setCaption(text);
+    },
+  });
 
   useEffect(() => {
     const update = () => setTime(formatTime(new Date()));
@@ -65,6 +72,19 @@ export function JudeInterface() {
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const voiceHint =
+    state === "connecting"
+      ? "Connecting…"
+      : state === "listening"
+        ? "Listening…"
+        : state === "thinking"
+          ? "Thinking…"
+          : state === "speaking"
+            ? "Speaking…"
+            : isActive
+              ? "Tap to stop"
+              : "Tap to talk to Jude";
 
   return (
     <div
@@ -74,7 +94,7 @@ export function JudeInterface() {
         height: "100vh",
         overflow: "hidden",
         background:
-          "radial-gradient(ellipse at 70% 45%, #2a2218 0%, #1a1510 45%, #0f0d0a 100%)",
+          "radial-gradient(ellipse at 50% 45%, #2a2218 0%, #1a1510 45%, #0f0d0a 100%)",
         display: "flex",
         flexDirection: "column",
         padding: "clamp(24px, 4vw, 48px) clamp(32px, 5vw, 64px)",
@@ -168,24 +188,59 @@ export function JudeInterface() {
         style={{
           flex: 1,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "flex-end",
-          paddingRight: "clamp(40px, 10vw, 120px)",
+          justifyContent: "center",
+          gap: "1.25rem",
         }}
       >
-        <div
-          role="img"
-          aria-label="Jude is listening"
+        <button
+          type="button"
+          aria-label={voiceHint}
+          onClick={() => (isActive ? stop() : start())}
           style={{
             width: "clamp(140px, 22vw, 260px)",
             height: "clamp(140px, 22vw, 260px)",
             borderRadius: "50%",
+            border: "none",
             background:
               "radial-gradient(circle at 40% 35%, #fff8e8 0%, #ffd080 30%, #e8a040 60%, #c07020 100%)",
-            animation: "glow-pulse 4s ease-in-out infinite, breathe 6s ease-in-out infinite",
+            animation:
+              state === "listening" || state === "speaking"
+                ? "glow-pulse 2s ease-in-out infinite, breathe 4s ease-in-out infinite"
+                : "glow-pulse 4s ease-in-out infinite, breathe 6s ease-in-out infinite",
             cursor: "pointer",
+            boxShadow:
+              state === "listening"
+                ? "0 0 80px 24px rgba(255, 190, 90, 0.35)"
+                : undefined,
           }}
         />
+        <p
+          style={{
+            fontSize: "clamp(0.85rem, 1.2vw, 1rem)",
+            color: "rgba(245, 240, 234, 0.55)",
+            fontWeight: 300,
+            textAlign: "center",
+            maxWidth: 420,
+          }}
+        >
+          {error || voiceHint}
+        </p>
+        {caption && !error && (
+          <p
+            style={{
+              fontSize: "clamp(0.8rem, 1.1vw, 0.95rem)",
+              color: "rgba(245, 240, 234, 0.45)",
+              fontWeight: 300,
+              textAlign: "center",
+              maxWidth: 520,
+              lineHeight: 1.5,
+            }}
+          >
+            {caption}
+          </p>
+        )}
       </div>
 
       {/* Status bar */}
